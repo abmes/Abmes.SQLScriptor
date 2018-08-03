@@ -20,7 +20,7 @@ implementation
 uses
   ConfigOracleConnectionParamsProvider, ConnectionsConfigLoader,
   ConsoleProgressLogger, OracleSQLConnectionInitializer, SQLScriptorWorkThread,
-  Utils;
+  Utils, FilteredDBConnectionNamesProvider;
 
 class procedure TSQLScriptorLauncher.Run(
   const AScriptFileName: string;
@@ -34,7 +34,6 @@ var
   LOracleSQLConnectionInitializer: TOracleSQLConnectionInitializer;
   LProgressLogger: TConsoleProgressLoader;
   LSQLScriptorWorkThread: TSQLScriptorWorkThread;
-  DBNames: TArray<string>;
 begin
   LConnectionsConfig:= TConnectionsConfigLoader.Load(ConfigLocation);
   try
@@ -44,13 +43,9 @@ begin
       try
         LProgressLogger:= TConsoleProgressLoader.Create;
         try
-          if (AFilterDBNames = '') or (AFilterDBNames = '*') then
-            SetLength(DBNames, 0)
-          else
-            DBNames:= LConnectionsConfig.FilteredDBConnectionNames(Utils.SplitString(AFilterDBNames, ','));
-
           LSQLScriptorWorkThread:=
-            TSQLScriptorWorkThread.Create(AScriptFileName, ALogFolderName, DBNames,
+            TSQLScriptorWorkThread.Create(AScriptFileName, ALogFolderName,
+            TFilteredDBConnectionNamesProvider.GetFilteredDBConnectionNames(LConnectionsConfig, AFilterDBNames),
             LOracleSQLConnectionInitializer, LProgressLogger);
           try
             LSQLScriptorWorkThread.WaitFor;

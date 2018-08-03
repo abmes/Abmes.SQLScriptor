@@ -44,8 +44,6 @@ type
     procedure AddConnection(AConnectionConfig: TConnectionConfig);
     function TryGetConnection(const ADBConnectionName: string): TConnectionConfig;
 
-    function FilteredDBConnectionNames(const ANames: TArray<string>): TArray<string>;
-
     property Connections: TArray<TConnectionConfig> read FConnections write FConnections;
   end;
 
@@ -72,36 +70,6 @@ begin
     c.Free;
 
   inherited;
-end;
-
-function TConnectionsConfig.FilteredDBConnectionNames(
-  const ANames: TArray<string>): TArray<string>;
-
-  function IsAccepted(ADBConnectionName: string): Boolean;
-  var
-    n: string;
-  begin
-    if (Length(ANames) = 0) then
-      Exit(True);
-
-    for n in ANames do
-      if SameText(n, ADBConnectionName) then
-        Exit(True);
-
-    Result:= False;
-  end;
-var
-  c: TConnectionConfig;
-
-begin
-  SetLength(Result, 0);
-
-  for c in Connections do
-    if IsAccepted(c.DBConnectionName) then
-      begin
-        SetLength(Result, Length(Result) + 1);
-        Result[Length(Result)-1]:= c.DBConnectionName;
-      end;
 end;
 
 function TConnectionsConfig.TryGetConnection(const ADBConnectionName: string): TConnectionConfig;
