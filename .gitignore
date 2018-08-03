@@ -1,0 +1,8 @@
+*.local
+*.identcache
+*.~dsk
+*.stat
+*.dsk
+__history
+__recovery
+Win32
