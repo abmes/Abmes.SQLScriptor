@@ -47,6 +47,14 @@ uses
   Utils, System.Types, System.Zip, System.StrUtils, Parser, Variables,
   ImmutableStack, FilePosition;
 
+resourcestring
+  SUnknownScriptVersion      = 'Unknown script verison';
+  SCantConnect               = 'Can''t connect';
+  SUnknownDBVersion          = 'Unknown db verison';
+  SDBIsOlder                 = 'Out of date';
+  SDBIsCurrent               = 'Up to date';
+  SDBIsNewer                 = 'Newer than script';
+
 { TSQLScriptorWorkThread }
 
 constructor TSQLScriptorWorkThread.Create(
@@ -108,9 +116,30 @@ begin
           FormatDateTime('yyyy-mm-dd_hh-nn', ADateTime)]));
 end;
 
-function FormatDatabaseAndVersion(const ADatabase, AVersion: string): string;
+function FormatDatabaseInfo(const ADatabase, AVersion, AStatus: string): string;
 begin
-  Result:= ADatabase.PadRight(30) + AVersion.PadRight(10);
+  Result:= ADatabase.PadRight(30) + AVersion.PadRight(10) + AStatus;
+end;
+
+function GetDatabaseStatus(const ADBVersion, AScriptVersion: Integer): string;
+begin
+  if (AScriptVersion <= 0) then
+    Exit(SUnknownScriptVersion);
+
+  if (ADBVersion < 0) then
+    Exit(SCantConnect);
+
+  if (ADBVersion = 0) then
+    Exit(SUnknownDBVersion);
+
+  if (ADBVersion < AScriptVersion) then
+    Exit(SDBIsOlder);
+
+  if (ADBVersion = AScriptVersion) then
+    Exit(SDBIsCurrent);
+
+  if (ADBVersion > AScriptVersion) then
+    Exit(SDBIsNewer);
 end;
 
 procedure TSQLScriptorWorkThread.Execute;
@@ -135,8 +164,8 @@ begin
         FProgressLogger.LogProgress('Script version: ' + ScriptVersion.ToString());
 
         FProgressLogger.LogProgress('');
-        FProgressLogger.LogProgress(FormatDatabaseAndVersion('Database', 'Version'));
-        FProgressLogger.LogProgress(''.PadRight(40, '-'));
+        FProgressLogger.LogProgress(FormatDatabaseInfo('Database', 'Version', 'Status'));
+        FProgressLogger.LogProgress(''.PadRight(70, '-'));
         ForEachDatabase(
           procedure(ADBName: string)
           var
@@ -145,10 +174,7 @@ begin
             DBVersion:= GetDBVersion(ADBName);
             Versions.Values[ADBName]:= DBVersion.ToString();
 
-            if (DBVersion < 0) then
-              FProgressLogger.LogProgress(FormatDatabaseAndVersion(ADBName, 'error'))
-            else
-              FProgressLogger.LogProgress(FormatDatabaseAndVersion(ADBName, DBVersion.ToString()));
+            FProgressLogger.LogProgress(FormatDatabaseInfo(ADBName, DBVersion.ToString(), GetDatabaseStatus(DBVersion, ScriptVersion)));
           end
         );
         FProgressLogger.LogProgress('');
