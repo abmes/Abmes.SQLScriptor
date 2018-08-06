@@ -148,6 +148,7 @@ var
   ScriptFileName: string;
   Versions: TStringList;
   ScriptVersion: Integer;
+  DownloadedScriptFileName: string;
 begin
   try
     try
@@ -156,12 +157,24 @@ begin
       FProgressLogger.LogProgress('Log folder: ' + FLogFolderName);
       FProgressLogger.LogProgress('SQL script file: ' + FScriptFileName);
 
+      LogDateTime:= Now;
+
+      if IsUrl(FScriptFileName) then
+        begin
+          FProgressLogger.LogProgress('');
+          FProgressLogger.LogProgress('Downloading script ...');
+
+          DownloadedScriptFileName:= 'SQLScriptorScript-' + FormatDateTime('yyyymmdd-hhnnss', LogDateTime) + '.zip';
+          DownloadedScriptFileName:= TPath.Combine(TempPath, DownloadedScriptFileName);
+
+          FScriptFileName:= HttpDownload(FScriptFileName, DownloadedScriptFileName);
+        end;
+
+      ScriptVersion:= GetScriptVersion(FScriptFileName);
+      FProgressLogger.LogProgress('Script version: ' + ScriptVersion.ToString());
+
       Versions:= TStringList.Create;
       try
-        LogDateTime:= Now;
-
-        ScriptVersion:= GetScriptVersion(FScriptFileName);
-        FProgressLogger.LogProgress('Script version: ' + ScriptVersion.ToString());
 
         FProgressLogger.LogProgress('');
         FProgressLogger.LogProgress(FormatDatabaseInfo('Database', 'Version', 'Status'));
@@ -387,7 +400,7 @@ procedure TSQLScriptorWorkThread.LoadScriptFromArchive(const AScriptFileName: st
 
       for fn in FileNames do
         begin
-          LastPathSeparatorPos:= fn.LastIndexOf(PathSeparator);
+          LastPathSeparatorPos:= fn.LastIndexOf(PathSeparator) + 1;
           if IsRootScriptFileName(Copy(fn, LastPathSeparatorPos + 1, Length(fn))) then
             Exit(Copy(fn, Pos(PathSeparator, fn) + 1, Length(fn)));
         end;

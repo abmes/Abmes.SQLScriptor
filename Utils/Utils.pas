@@ -30,7 +30,8 @@ function RunningProcessCount(const AExeFileName: string): Integer;
 
 function TempPath: string;
 
-function HttpGetString(const AUrl: string; AAccept: string = ''): string;
+function HttpGetString(const AUrl: string; const AAccept: string = ''): string;
+function HttpDownload(const AUrl, AFileName: string): string;
 
 function IsURL(const AValue: string): Boolean;
 
@@ -45,7 +46,8 @@ resourcestring
 implementation
 
 uses
-  System.StrUtils, Winapi.TlHelp32, Winapi.Windows, System.Net.URLClient;
+  System.StrUtils, Winapi.TlHelp32, Winapi.Windows, System.Net.URLClient,
+  System.Net.HttpClient;
 
 const
   SWebRequestUserAgentName = 'Abmes';
@@ -245,19 +247,7 @@ begin
 	SetLength(Result, i);
 end;
 
-procedure BypassRESTHTTPProxy(ARESTHTTP: TRESTHTTP);
-const
-  HTTPClientDirectProxyUrl = 'http://direct:80';
-var
-  uri: TURI;
-begin
-  uri:= TURI.Create(HTTPClientDirectProxyUrl);
-
-  ARESTHTTP.ProxyParams.ProxyServer:= uri.Scheme + '://' + uri.Host;
-  ARESTHTTP.ProxyParams.ProxyPort:= uri.Port;
-end;
-
-function HttpGetString(const AUrl: string; AAccept: string = ''): string;
+function HttpGetString(const AUrl: string; const AAccept: string = ''): string;
 var
   http: TRESTHTTP;
   ResponseStream: TStringStream;
@@ -267,8 +257,6 @@ begin
     try
       http:= TRESTHTTP.Create;
       try
-        BypassRESTHTTPProxy(http);
-
         if (AAccept <> '') then
           http.Request.Accept:= AAccept;
 
@@ -288,6 +276,30 @@ begin
     on E: EHTTPProtocolException do
       raise Exception.Create(E.Message + SLineBreak + E.ErrorMessage);
   end;
+end;
+
+function HttpDownload(const AUrl, AFileName: string): string;
+var
+  http: THTTPClient;
+  ResponseStream: TFileStream;
+  Response: IHTTPResponse;
+begin
+  ResponseStream:= TFileStream.Create(AFileName, fmCreate);
+  try
+    http:= THTTPClient.Create;
+    try
+      Response:= http.Get(AUrl, ResponseStream);
+
+      if (Response.StatusCode <> 200) then
+        raise Exception.Create(Format('Error downloading file: %d %s', [Response.StatusCode, Response.StatusText]) + SLineBreak + Response.ContentAsString());
+    finally
+      FreeAndNil(http);
+    end;
+  finally
+    ResponseStream.Free;
+  end;
+
+  Result:= AFileName;
 end;
 
 function IsURL(const AValue: string): Boolean;
