@@ -92,7 +92,7 @@ begin
   ClearLogMessageCounts;
   DoLog(
     ConcatLines(
-      'Abmes SQLScript Utility 4.0',
+      SAppSignature,
       Format('Log Begin: %s', [DateTimeToStr(Now)])));
 end;
 

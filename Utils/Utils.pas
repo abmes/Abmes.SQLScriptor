@@ -37,6 +37,9 @@ function IsURL(const AValue: string): Boolean;
 type
   TConstFunc<T,TResult> = reference to function (const Arg1: T): TResult;
 
+resourcestring
+  SAppSignature = 'Abmes SQLScript Utility 4.0';
+
 implementation
 
 uses

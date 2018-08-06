@@ -6,6 +6,7 @@ program Abmes.SQLScriptor;
 
 uses
   System.SysUtils,
+  System.IOUtils,
   Utils in 'Utils\Utils.pas',
   SimpleDictionaries in 'Utils\SimpleDictionaries.pas',
   ImmutableStack in 'Utils\ImmutableStack.pas',
@@ -27,12 +28,39 @@ uses
   ConnectionsConfig in 'Config\ConnectionsConfig.pas',
   ConnectionsConfigLoader in 'Config\ConnectionsConfigLoader.pas',
   ConsoleProgressLogger in 'ConsoleProgressLogger.pas',
-  SQLScriptorLauncher in 'SQLScriptorLauncher.pas';
+  SQLScriptorLauncher in 'SQLScriptorLauncher.pas',
+  FilteredDBConnectionNamesProvider in 'Config\FilteredDBConnectionNamesProvider.pas';
+
+var
+  ScriptFileName: string;
+  LogFolderName: string;
+  ConfigLocation: string;
+  FilterDBNames: string;
+  ExecuteScript: Boolean;
 
 begin
   try
-    { TODO -oUser -cConsole Main : Insert code here }
-    TSQLScriptorLauncher.Run(ParamStr(1), ParamStr(2), ParamStr(3), ParamStr(4));
+    if not FindCmdLineSwitch('databases', FilterDBNames) then
+      FilterDBNames:= '';
+
+    ExecuteScript:= not FindCmdLineSwitch('versionsonly');
+
+    if FindCmdLineSwitch('script', ScriptFileName) and
+       FindCmdLineSwitch('logdir', LogFolderName) and
+       FindCmdLineSwitch('config', ConfigLocation) then
+      TSQLScriptorLauncher.Run(ScriptFileName, LogFolderName, ConfigLocation, FilterDBNames, ExecuteScript)
+    else
+      begin
+        Writeln(SAppSignature);
+        Writeln('');
+        Writeln('Switches:');
+        Writeln('  /script [ScriptFileName]');
+        Writeln('  /logdir [LogsDirName]');
+        Writeln('  /config [FileOrHttpConfigLocation]');
+        Writeln('  /databases [CommaSeparatedFilterDBNames]');
+        Writeln('  /versionsonly');
+        Writeln('');
+      end;
   except
     on E: Exception do
       Writeln(E.ClassName, ': ', E.Message);

@@ -3,7 +3,7 @@ unit SQLScriptorWorkThread;
 interface
 
 uses
-  System.Classes, SQLConnectionInitializer, ProgressLogger;
+  System.Classes, SQLConnectionInitializer, ProgressLogger, System.SysUtils;
 
 type
   TSQLScriptorWorkThread = class(TThread)
@@ -13,10 +13,18 @@ type
     FDBNames: TArray<string>;
     FSQLConnectionInitializer: ISQLConnectionInitializer;
     FProgressLogger: IProgressLogger;
+    FExecuteScript: Boolean;
     function DoExecScript(const AScriptFileName, ADBName, ALogFileName: string): Boolean;
     procedure DoDBCompleted(const ADBName: string; const AHasErrors: Boolean);
     procedure DoAllCompleted;
     function PersistScript(const AScriptFileName: string): string;
+    procedure ForEachDatabase(AProc: TProc<string>);
+    function GetDBVersion(const ADBName: string): Integer;
+    function FileIsArchive(const AFileName: string): Boolean;
+    function IsRootScriptFileName(const AFileName: string): Boolean;
+    function GetScriptVersion(const AScriptFileName: string): Integer;
+    procedure LoadScriptFromArchive(const AScriptFileName: string;
+      ADest: TStringList);
   protected
     procedure Execute; override;
   public
@@ -25,14 +33,15 @@ type
       const ALogFolderName: string;
       const ADBNames: TArray<string>;
       const ASQLConnectionInitializer: ISQLConnectionInitializer;
-      const AProgressLogger: IProgressLogger);
+      const AProgressLogger: IProgressLogger;
+      const AExecuteScript: Boolean);
   end;
 
 implementation
 
 uses
-  SQLScriptor, Logger, StatementExecutor, System.IOUtils, System.SysUtils,
-  Utils, System.Types, System.Zip, System.StrUtils;
+  SQLScriptor, Logger, StatementExecutor, System.IOUtils,
+  Utils, System.Types, System.Zip, System.StrUtils, Parser;
 
 { TSQLScriptorWorkThread }
 
@@ -41,16 +50,18 @@ constructor TSQLScriptorWorkThread.Create(
   const ALogFolderName: string;
   const ADBNames: TArray<string>;
   const ASQLConnectionInitializer: ISQLConnectionInitializer;
-  const AProgressLogger: IProgressLogger);
+  const AProgressLogger: IProgressLogger;
+  const AExecuteScript: Boolean);
 begin
   inherited Create(False);
-  FreeOnTerminate:= True;
+//  FreeOnTerminate:= True;
 
   FScriptFileName:= AScriptFileName;
   FLogFolderName:= ALogFolderName;
   FDBNames:= ADBNames;
   FSQLConnectionInitializer:= ASQLConnectionInitializer;
   FProgressLogger:= AProgressLogger;
+  FExecuteScript:= AExecuteScript;
 end;
 
 procedure TSQLScriptorWorkThread.DoAllCompleted;
@@ -91,40 +102,98 @@ begin
           FormatDateTime('yyyy-mm-dd_hh-nn', ADateTime)]));
 end;
 
+function FormatDatabaseAndVersion(const ADatabase, AVersion: string): string;
+begin
+  Result:= ADatabase.PadRight(30) + AVersion.PadRight(10);
+end;
+
 procedure TSQLScriptorWorkThread.Execute;
 var
-  DBIndex: Integer;
-  DBName: string;
-  HasErrors: Boolean;
   LogDateTime: TDateTime;
   ScriptFileName: string;
+  Versions: TStringList;
+  ScriptVersion: Integer;
 begin
   try
-    LogDateTime:= Now;
+    FProgressLogger.LogProgress(SAppSignature);
+    FProgressLogger.LogProgress('');
+    FProgressLogger.LogProgress('Log folder: ' + FLogFolderName);
+    FProgressLogger.LogProgress('SQL script file: ' + FScriptFileName);
 
-    ScriptFileName:= PersistScript(FScriptFileName);
+    Versions:= TStringList.Create;
+    try
+      LogDateTime:= Now;
 
-    DBIndex:= 0;
+      ScriptVersion:= GetScriptVersion(FScriptFileName);
+      FProgressLogger.LogProgress('Script version: ' + ScriptVersion.ToString());
 
-    while not Terminated do
-      begin
-        HasErrors:= True;
+      FProgressLogger.LogProgress('');
+      FProgressLogger.LogProgress(FormatDatabaseAndVersion('Database', 'Version'));
+      FProgressLogger.LogProgress(''.PadRight(40, '-'));
+      ForEachDatabase(
+        procedure(ADBName: string)
+        var
+          DBVersion: Integer;
+        begin
+          DBVersion:= GetDBVersion(ADBName);
+          Versions.Values[ADBName]:= DBVersion.ToString();
 
-        if (DBIndex > Length(FDBNames)) then
-          Break;
+          FProgressLogger.LogProgress(FormatDatabaseAndVersion(ADBName, DBVersion.ToString()));
+        end
+      );
+      FProgressLogger.LogProgress('');
 
-        DBName:= FDBNames[DBIndex];
+      if FExecuteScript then
+        begin
+          FProgressLogger.LogProgress('Executing script on databases...');
 
-        try
-          HasErrors:= DoExecScript(ScriptFileName, DBName, GetLogFileName(ScriptFileName, DBName, FLogFolderName, LogDateTime));
-        finally
-          Inc(DBIndex);
-          DoDBCompleted(DBName, HasErrors);
+          ScriptFileName:= PersistScript(FScriptFileName);
+          ForEachDatabase(
+            procedure(ADBName: string)
+            var
+              DBVersion: Integer;
+              HasErrors: Boolean;
+            begin
+              FProgressLogger.LogProgress('');
+              FProgressLogger.LogProgress('Database: ' + ADBName);
+
+              DBVersion:= StrToInt(Versions.Values[ADBName]);
+
+              if (DBVersion > ScriptVersion) then
+                begin
+                  FProgressLogger.LogProgress('Skipped. Up to date or newer than script.');
+                end
+              else
+                begin
+                  HasErrors:= True;
+                  try
+                    FProgressLogger.LogProgress('Updating...');
+                    HasErrors:= DoExecScript(ScriptFileName, ADBName, GetLogFileName(ScriptFileName, ADBName, FLogFolderName, LogDateTime));
+                  finally
+                    DoDBCompleted(ADBName, HasErrors);
+                  end;
+                end;
+            end
+          );
         end;
-      end;
+    finally
+      Versions.Free;
+    end;
   finally
     DoAllCompleted;
   end;
+end;
+
+procedure TSQLScriptorWorkThread.ForEachDatabase(AProc: TProc<string>);
+var
+  DBIndex: Integer;
+begin
+  DBIndex:= 0;
+  while (not Terminated) and (DBIndex < Length(FDBNames)) do
+    begin
+      AProc(FDBNames[DBIndex]);
+      Inc(DBIndex);
+    end;
 end;
 
 function TSQLScriptorWorkThread.PersistScript(
@@ -137,18 +206,6 @@ function TSQLScriptorWorkThread.PersistScript(
     Result:= TPath.Combine(TempPath, SScriptTempDirName);
   end;
 
-  function FileIsArchive(const AFileName: string): Boolean;
-  begin
-    Result:= ExtractFileExt(AFileName).TrimLeft(['.']).ToLower() = 'zip';
-  end;
-
-  function IsRootScriptFileName(const AFileName: string): Boolean; overload;
-  begin
-    Result:=
-      (AFileName <> '') and
-      not StartsText('_', ExtractFileName(AFileName));
-  end;
-
 var
   ZipFile: TZipFile;
   SqlFileNames: TStringDynArray;
@@ -159,6 +216,8 @@ begin
     Result:= AScriptFileName
   else
     begin
+      FProgressLogger.LogProgress('Unpacking script...');
+
       ScriptTempPath:= GetScriptTempPath;
 
       if TDirectory.Exists(ScriptTempPath) then
@@ -176,6 +235,8 @@ begin
         FreeAndNil(ZipFile);
       end;
 
+      FProgressLogger.LogProgress('Done unpacking script.');
+
       SqlFileNames:= TDirectory.GetFiles(ScriptTempPath, '*.sql', TSearchOption.soAllDirectories);
 
       for sfn in SqlFileNames do
@@ -184,6 +245,113 @@ begin
 
       Result:= '';
     end;
+end;
+
+function TSQLScriptorWorkThread.GetDBVersion(const ADBName: string): Integer;
+begin
+  Result:= 999999; // todo
+end;
+
+function TSQLScriptorWorkThread.FileIsArchive(const AFileName: string): Boolean;
+begin
+  Result:= ExtractFileExt(AFileName).TrimLeft(['.']).ToLower() = 'zip';
+end;
+
+function TSQLScriptorWorkThread.IsRootScriptFileName(const AFileName: string): Boolean;
+begin
+  Result:=
+    (AFileName <> '') and
+    not StartsText('_', ExtractFileName(AFileName));
+end;
+
+function TSQLScriptorWorkThread.GetScriptVersion(
+  const AScriptFileName: string): Integer;
+var
+  sl: TStringList;
+  i: Integer;
+  LineType: TLineType;
+  LineCommandParams: TArray<string>;
+begin
+  Result:= 0;
+
+  sl:= TStringList.Create;
+  try
+    if FileIsArchive(AScriptFileName) then
+      LoadScriptFromArchive(AScriptFileName, sl)
+    else
+      sl.LoadFromFile(AScriptFileName);
+
+    for i:= sl.Count-1 downto 0 do
+      begin
+        ParseLine(sl[i], LineType, LineCommandParams);
+        if (LineType = ltLabel) and (Length(LineCommandParams) > 0) then
+          begin
+            Result:= StrToIntDef(LineCommandParams[0], 0);
+            if (Result <> 0) then
+              Break;
+          end;
+      end;
+  finally
+    FreeAndNil(sl);
+  end;
+
+  if (Result = 0) then
+    Result:= 999999;
+end;
+
+procedure TSQLScriptorWorkThread.LoadScriptFromArchive(const AScriptFileName: string;
+  ADest: TStringList);
+
+  function GetCompressedScriptFileName(const AFileNames: TArray<string>): string;
+  const
+    PathSeparator = '/';
+  var
+    fn: string;
+    FileNames: TStringList;
+    LastPathSeparatorPos: Integer;
+  begin
+    FileNames:= TStringList.Create;
+    try
+      for fn in AFileNames do
+        FileNames.Add(FormatFloat('000', fn.CountChar(PathSeparator)) + PathSeparator +  fn);
+      FileNames.Sort;
+
+      for fn in FileNames do
+        begin
+          LastPathSeparatorPos:= fn.LastIndexOf(PathSeparator);
+          if IsRootScriptFileName(Copy(fn, LastPathSeparatorPos + 1, Length(fn))) then
+            Exit(Copy(fn, Pos(PathSeparator, fn) + 1, Length(fn)));
+        end;
+    finally
+      FreeAndNil(FileNames);
+    end;
+
+    Result:= '';
+  end;
+
+var
+  ZipFile: TZipFile;
+  ScriptBytes: TBytes;
+  ScriptStream: TBytesStream;
+begin
+  ZipFile:= TZipFile.Create;
+  try
+    ZipFile.Open(AScriptFileName, zmRead);
+    try
+      ZipFile.Read(GetCompressedScriptFileName(ZipFile.FileNames), ScriptBytes);
+    finally
+      ZipFile.Close;
+    end;
+  finally
+    FreeAndNil(ZipFile);
+  end;
+
+  ScriptStream:= TBytesStream.Create(ScriptBytes);
+  try
+    ADest.LoadFromStream(ScriptStream);
+  finally
+    FreeAndNil(ScriptStream);
+  end;
 end;
 
 end.

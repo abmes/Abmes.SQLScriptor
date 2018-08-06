@@ -12,7 +12,9 @@ type
       const AScriptFileName: string;
       const ALogFolderName: string;
       const AConfigLocation: string;
-      const AFilterDBNames: string);
+      const AFilterDBNames: string;
+      const AExecuteScript: Boolean
+    );
   end;
 
 implementation
@@ -26,40 +28,31 @@ class procedure TSQLScriptorLauncher.Run(
   const AScriptFileName: string;
   const ALogFolderName: string;
   const AConfigLocation: string;
-  const AFilterDBNames: string);
+  const AFilterDBNames: string;
+  const AExecuteScript: Boolean
+);
 var
-  ConfigLocation: string;
   LConnectionsConfig: TConnectionsConfig;
   LConfigOracleConnectionParamsProvider: TConfigOracleConnectionParamsProvider;
   LOracleSQLConnectionInitializer: TOracleSQLConnectionInitializer;
   LProgressLogger: TConsoleProgressLoader;
   LSQLScriptorWorkThread: TSQLScriptorWorkThread;
 begin
-  LConnectionsConfig:= TConnectionsConfigLoader.Load(ConfigLocation);
+  LConnectionsConfig:= TConnectionsConfigLoader.Load(AConfigLocation);
   try
     LConfigOracleConnectionParamsProvider:= TConfigOracleConnectionParamsProvider.Create(LConnectionsConfig);
+    LOracleSQLConnectionInitializer:= TOracleSQLConnectionInitializer.Create(LConfigOracleConnectionParamsProvider);
+    LProgressLogger:= TConsoleProgressLoader.Create;
+
+    LSQLScriptorWorkThread:=
+      TSQLScriptorWorkThread.Create(AScriptFileName, ALogFolderName,
+      TFilteredDBConnectionNamesProvider.GetFilteredDBConnectionNames(LConnectionsConfig, AFilterDBNames),
+      LOracleSQLConnectionInitializer, LProgressLogger, AExecuteScript);
     try
-      LOracleSQLConnectionInitializer:= TOracleSQLConnectionInitializer.Create(LConfigOracleConnectionParamsProvider);
-      try
-        LProgressLogger:= TConsoleProgressLoader.Create;
-        try
-          LSQLScriptorWorkThread:=
-            TSQLScriptorWorkThread.Create(AScriptFileName, ALogFolderName,
-            TFilteredDBConnectionNamesProvider.GetFilteredDBConnectionNames(LConnectionsConfig, AFilterDBNames),
-            LOracleSQLConnectionInitializer, LProgressLogger);
-          try
-            LSQLScriptorWorkThread.WaitFor;
-          finally
-            LSQLScriptorWorkThread.Free;
-          end;
-        finally
-          LProgressLogger.Free;
-        end;
-      finally
-        LOracleSQLConnectionInitializer.Free;
-      end;
+      if not LSQLScriptorWorkThread.Finished then
+        LSQLScriptorWorkThread.WaitFor;
     finally
-      LConfigOracleConnectionParamsProvider.Free;
+      LSQLScriptorWorkThread.Free;
     end;
   finally
     LConnectionsConfig.Free;
