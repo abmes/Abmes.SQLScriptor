@@ -22,7 +22,8 @@ implementation
 uses
   ConfigOracleConnectionParamsProvider, ConnectionsConfigLoader,
   ConsoleProgressLogger, OracleSQLConnectionInitializer, SQLScriptorWorkThread,
-  Utils, FilteredDBConnectionNamesProvider;
+  Utils, FilteredDBConnectionNamesProvider, DatabaseVersionProvider,
+  OracleDatabaseVersionProvider;
 
 class procedure TSQLScriptorLauncher.Run(
   const AScriptFileName: string;
@@ -36,6 +37,7 @@ var
   LConfigOracleConnectionParamsProvider: TConfigOracleConnectionParamsProvider;
   LOracleSQLConnectionInitializer: TOracleSQLConnectionInitializer;
   LProgressLogger: TConsoleProgressLoader;
+  LOracleDatabaseVersionProvider: IDatabaseVersionProvider;
   LSQLScriptorWorkThread: TSQLScriptorWorkThread;
 begin
   LConnectionsConfig:= TConnectionsConfigLoader.Load(AConfigLocation);
@@ -43,11 +45,12 @@ begin
     LConfigOracleConnectionParamsProvider:= TConfigOracleConnectionParamsProvider.Create(LConnectionsConfig);
     LOracleSQLConnectionInitializer:= TOracleSQLConnectionInitializer.Create(LConfigOracleConnectionParamsProvider);
     LProgressLogger:= TConsoleProgressLoader.Create;
+    LOracleDatabaseVersionProvider:= TOracleDatabaseVersionProvider.Create;
 
     LSQLScriptorWorkThread:=
       TSQLScriptorWorkThread.Create(AScriptFileName, ALogFolderName,
       TFilteredDBConnectionNamesProvider.GetFilteredDBConnectionNames(LConnectionsConfig, AFilterDBNames),
-      LOracleSQLConnectionInitializer, LProgressLogger, AExecuteScript);
+      LOracleSQLConnectionInitializer, LProgressLogger, LOracleDatabaseVersionProvider, AExecuteScript);
     try
       if not LSQLScriptorWorkThread.Finished then
         LSQLScriptorWorkThread.WaitFor;

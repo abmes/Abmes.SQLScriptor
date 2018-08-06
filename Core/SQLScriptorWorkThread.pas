@@ -3,7 +3,8 @@ unit SQLScriptorWorkThread;
 interface
 
 uses
-  System.Classes, SQLConnectionInitializer, ProgressLogger, System.SysUtils;
+  System.Classes, SQLConnectionInitializer, ProgressLogger, System.SysUtils,
+  DatabaseVersionProvider;
 
 type
   TSQLScriptorWorkThread = class(TThread)
@@ -13,6 +14,7 @@ type
     FDBNames: TArray<string>;
     FSQLConnectionInitializer: ISQLConnectionInitializer;
     FProgressLogger: IProgressLogger;
+    FDatabaseVersionProvider: IDatabaseVersionProvider;
     FExecuteScript: Boolean;
     function DoExecScript(const AScriptFileName, ADBName, ALogFileName: string): Boolean;
     procedure DoDBCompleted(const ADBName: string; const AHasErrors: Boolean);
@@ -34,6 +36,7 @@ type
       const ADBNames: TArray<string>;
       const ASQLConnectionInitializer: ISQLConnectionInitializer;
       const AProgressLogger: IProgressLogger;
+      const ADatabaseVersionProvider: IDatabaseVersionProvider;
       const AExecuteScript: Boolean);
   end;
 
@@ -41,7 +44,8 @@ implementation
 
 uses
   SQLScriptor, Logger, StatementExecutor, System.IOUtils,
-  Utils, System.Types, System.Zip, System.StrUtils, Parser;
+  Utils, System.Types, System.Zip, System.StrUtils, Parser, Variables,
+  ImmutableStack, FilePosition;
 
 { TSQLScriptorWorkThread }
 
@@ -51,6 +55,7 @@ constructor TSQLScriptorWorkThread.Create(
   const ADBNames: TArray<string>;
   const ASQLConnectionInitializer: ISQLConnectionInitializer;
   const AProgressLogger: IProgressLogger;
+  const ADatabaseVersionProvider: IDatabaseVersionProvider;
   const AExecuteScript: Boolean);
 begin
   inherited Create(False);
@@ -61,6 +66,7 @@ begin
   FDBNames:= ADBNames;
   FSQLConnectionInitializer:= ASQLConnectionInitializer;
   FProgressLogger:= AProgressLogger;
+  FDatabaseVersionProvider:= ADatabaseVersionProvider;
   FExecuteScript:= AExecuteScript;
 end;
 
@@ -115,72 +121,85 @@ var
   ScriptVersion: Integer;
 begin
   try
-    FProgressLogger.LogProgress(SAppSignature);
-    FProgressLogger.LogProgress('');
-    FProgressLogger.LogProgress('Log folder: ' + FLogFolderName);
-    FProgressLogger.LogProgress('SQL script file: ' + FScriptFileName);
-
-    Versions:= TStringList.Create;
     try
-      LogDateTime:= Now;
-
-      ScriptVersion:= GetScriptVersion(FScriptFileName);
-      FProgressLogger.LogProgress('Script version: ' + ScriptVersion.ToString());
-
+      FProgressLogger.LogProgress(SAppSignature);
       FProgressLogger.LogProgress('');
-      FProgressLogger.LogProgress(FormatDatabaseAndVersion('Database', 'Version'));
-      FProgressLogger.LogProgress(''.PadRight(40, '-'));
-      ForEachDatabase(
-        procedure(ADBName: string)
-        var
-          DBVersion: Integer;
-        begin
-          DBVersion:= GetDBVersion(ADBName);
-          Versions.Values[ADBName]:= DBVersion.ToString();
+      FProgressLogger.LogProgress('Log folder: ' + FLogFolderName);
+      FProgressLogger.LogProgress('SQL script file: ' + FScriptFileName);
 
-          FProgressLogger.LogProgress(FormatDatabaseAndVersion(ADBName, DBVersion.ToString()));
-        end
-      );
-      FProgressLogger.LogProgress('');
+      Versions:= TStringList.Create;
+      try
+        LogDateTime:= Now;
 
-      if FExecuteScript then
-        begin
-          FProgressLogger.LogProgress('Executing script on databases...');
+        ScriptVersion:= GetScriptVersion(FScriptFileName);
+        FProgressLogger.LogProgress('Script version: ' + ScriptVersion.ToString());
 
-          ScriptFileName:= PersistScript(FScriptFileName);
-          ForEachDatabase(
-            procedure(ADBName: string)
-            var
-              DBVersion: Integer;
-              HasErrors: Boolean;
-            begin
-              FProgressLogger.LogProgress('');
-              FProgressLogger.LogProgress('Database: ' + ADBName);
+        FProgressLogger.LogProgress('');
+        FProgressLogger.LogProgress(FormatDatabaseAndVersion('Database', 'Version'));
+        FProgressLogger.LogProgress(''.PadRight(40, '-'));
+        ForEachDatabase(
+          procedure(ADBName: string)
+          var
+            DBVersion: Integer;
+          begin
+            DBVersion:= GetDBVersion(ADBName);
+            Versions.Values[ADBName]:= DBVersion.ToString();
 
-              DBVersion:= StrToInt(Versions.Values[ADBName]);
+            if (DBVersion < 0) then
+              FProgressLogger.LogProgress(FormatDatabaseAndVersion(ADBName, 'error'))
+            else
+              FProgressLogger.LogProgress(FormatDatabaseAndVersion(ADBName, DBVersion.ToString()));
+          end
+        );
+        FProgressLogger.LogProgress('');
 
-              if (DBVersion > ScriptVersion) then
-                begin
-                  FProgressLogger.LogProgress('Skipped. Up to date or newer than script.');
-                end
-              else
-                begin
-                  HasErrors:= True;
-                  try
-                    FProgressLogger.LogProgress('Updating...');
-                    HasErrors:= DoExecScript(ScriptFileName, ADBName, GetLogFileName(ScriptFileName, ADBName, FLogFolderName, LogDateTime));
-                  finally
-                    DoDBCompleted(ADBName, HasErrors);
-                  end;
-                end;
-            end
-          );
-        end;
+        if FExecuteScript then
+          begin
+            FProgressLogger.LogProgress('Executing script on databases...');
+
+            ScriptFileName:= PersistScript(FScriptFileName);
+            ForEachDatabase(
+              procedure(ADBName: string)
+              var
+                DBVersion: Integer;
+                HasErrors: Boolean;
+              begin
+                FProgressLogger.LogProgress('');
+                FProgressLogger.LogProgress('Database: ' + ADBName);
+
+                DBVersion:= StrToInt(Versions.Values[ADBName]);
+
+                if (DBVersion < 0) then
+                  begin
+                    FProgressLogger.LogProgress('Skipped. Error occured getting the database version.');
+                  end
+                else
+                  if (DBVersion > ScriptVersion) then
+                    begin
+                      FProgressLogger.LogProgress('Skipped. Up to date or newer than script.');
+                    end
+                  else
+                    begin
+                      HasErrors:= True;
+                      try
+                        FProgressLogger.LogProgress('Updating...');
+                        HasErrors:= DoExecScript(ScriptFileName, ADBName, GetLogFileName(ScriptFileName, ADBName, FLogFolderName, LogDateTime));
+                      finally
+                        DoDBCompleted(ADBName, HasErrors);
+                      end;
+                    end;
+              end
+            );
+          end;
+      finally
+        Versions.Free;
+      end;
     finally
-      Versions.Free;
+      DoAllCompleted;
     end;
-  finally
-    DoAllCompleted;
+  except
+    on E: Exception do
+      FProgressLogger.LogProgress(E.Message);
   end;
 end;
 
@@ -248,8 +267,32 @@ begin
 end;
 
 function TSQLScriptorWorkThread.GetDBVersion(const ADBName: string): Integer;
+var
+  ex: ISqlStatementExecutor;
+  VariablesSet: IVariablesSet;
 begin
-  Result:= 999999; // todo
+  try
+    VariablesSet:= TVariablesSet.Create(TVariables.Create);
+
+    ex:= TDBXSqlStatementExecutor.Create(ADBName, 0, nil, FSQLConnectionInitializer);
+
+    Result:=
+      FDatabaseVersionProvider.GetDatabaseVersion(
+        procedure(ASQL: string) begin
+          ex.ExecStatement(
+            ASQL,
+            VariablesSet,
+            False,
+            TImmutableStack<IFilePosition>.Create);
+        end,
+        function(AVarName: string): Variant
+        begin
+          Result:= VariablesSet[AVarName]
+        end
+      );
+  except
+    Result:= -1;
+  end;
 end;
 
 function TSQLScriptorWorkThread.FileIsArchive(const AFileName: string): Boolean;

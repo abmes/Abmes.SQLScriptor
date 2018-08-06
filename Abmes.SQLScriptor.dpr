@@ -29,7 +29,9 @@ uses
   ConnectionsConfigLoader in 'Config\ConnectionsConfigLoader.pas',
   ConsoleProgressLogger in 'ConsoleProgressLogger.pas',
   SQLScriptorLauncher in 'SQLScriptorLauncher.pas',
-  FilteredDBConnectionNamesProvider in 'Config\FilteredDBConnectionNamesProvider.pas';
+  FilteredDBConnectionNamesProvider in 'Config\FilteredDBConnectionNamesProvider.pas',
+  DatabaseVersionProvider in 'Core\DatabaseVersionProvider.pas',
+  OracleDatabaseVersionProvider in 'Oracle\OracleDatabaseVersionProvider.pas';
 
 var
   ScriptFileName: string;

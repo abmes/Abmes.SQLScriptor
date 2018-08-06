@@ -17,7 +17,7 @@ type
 implementation
 
 uses
-  System.Classes, System.SysUtils, Data.DBXCommon, System.Variants;
+  System.Classes, System.SysUtils, Data.DBXCommon, System.Variants, DbxOdaDriverLoader, DriverOptions;
 
 resourcestring
   SInvalidDBConnectionType = 'Invalid database connection type (%s)';
@@ -28,12 +28,6 @@ const
 
   sBuiltinDriverName = 'DevartOracleBuiltin';
   sDirectBuiltinDriverName = 'DevartOracleDirectBuiltin';
-
-  SLongStrings          = 'LongStrings';
-  SEnableBCD            = 'EnableBCD';
-  SReconnect            = 'Reconnect';
-  SUseUnicode           = 'UseUnicode';
-  SUseUnicodeMemo       = 'UseUnicodeMemo';
 
 { TOracleSQLConnectionInitializer }
 
@@ -66,7 +60,7 @@ begin
 
   Assert(VarIsArray(DatabaseParams));
 
-  ParamsLowBoundIndex:= VarArrayLowBound(DatabaseParams, 0);
+  ParamsLowBoundIndex:= VarArrayLowBound(DatabaseParams, 1);
 
   DBConnectionType:= DatabaseParams[ParamsLowBoundIndex + 0];
   DBHost:= DatabaseParams[ParamsLowBoundIndex + 1];
@@ -75,6 +69,8 @@ begin
   DBUser:= DatabaseParams[ParamsLowBoundIndex + 4];
   DBPassword:= DatabaseParams[ParamsLowBoundIndex + 5];
 
+  if (DBConnectionType = '') then
+    DBConnectionType:= SOraDirectConnectionType;
 
   if (DBConnectionType <> SOraDirectConnectionType) and
      (DBConnectionType <> SOraClientConnectionType) then

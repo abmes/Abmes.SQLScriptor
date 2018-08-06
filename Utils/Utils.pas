@@ -34,6 +34,8 @@ function HttpGetString(const AUrl: string; AAccept: string = ''): string;
 
 function IsURL(const AValue: string): Boolean;
 
+function VarToInt(const V: Variant): Integer;
+
 type
   TConstFunc<T,TResult> = reference to function (const Arg1: T): TResult;
 
@@ -84,7 +86,7 @@ end;
 
 function ConcatLines(const AString1, AString2: string; const ASkipEmptyLines: Boolean = True): string;
 begin
-  Result:= ConcatWords(AString1, AString2, ASkipEmptyLines, SLineBreak);
+  Result:= ConcatWords([AString1, AString2], ASkipEmptyLines, SLineBreak);
 end;
 
 function ConcatLines(const AString1, AString2, AString3: string; const ASkipEmptyLines: Boolean = True): string;
@@ -291,6 +293,14 @@ end;
 function IsURL(const AValue: string): Boolean;
 begin
   Result:= StartsText('http://', AValue) or StartsText('https://', AValue);
+end;
+
+function VarToInt(const V: Variant): Integer;
+begin
+  if VarIsEmpty(V) or VarIsNull(V) then
+    Result:= 0
+  else
+    Result:= V;
 end;
 
 end.

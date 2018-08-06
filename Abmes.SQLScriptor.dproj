@@ -123,6 +123,8 @@
         <DCCReference Include="ConsoleProgressLogger.pas"/>
         <DCCReference Include="SQLScriptorLauncher.pas"/>
         <DCCReference Include="Config\FilteredDBConnectionNamesProvider.pas"/>
+        <DCCReference Include="Core\DatabaseVersionProvider.pas"/>
+        <DCCReference Include="Oracle\OracleDatabaseVersionProvider.pas"/>
         <BuildConfiguration Include="Release">
             <Key>Cfg_2</Key>
             <CfgParent>Base</CfgParent>
