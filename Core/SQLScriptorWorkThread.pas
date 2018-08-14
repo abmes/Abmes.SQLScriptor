@@ -194,9 +194,9 @@ begin
 
         if FExecuteScript then
           begin
-            FProgressLogger.LogProgress('Executing script on databases...');
-
             ScriptFileName:= PersistScript(FScriptFileName);
+
+            FProgressLogger.LogProgress('Executing script on databases...');
             ForEachDatabase(
               procedure(ADBName: string)
               var
