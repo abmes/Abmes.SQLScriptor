@@ -83,12 +83,12 @@ end;
 
 function ConcatWords(const AString1, AString2: string; const ASkipEmptyWords: Boolean = True; const ADelimiter: string = ' '): string;
 begin
-  Result:= ConcatWords(AString1, AString2, ASkipEmptyWords, ADelimiter);
+  Result:= ConcatWords([AString1, AString2], ASkipEmptyWords, ADelimiter);
 end;
 
 function ConcatLines(const AString1, AString2: string; const ASkipEmptyLines: Boolean = True): string;
 begin
-  Result:= ConcatWords([AString1, AString2], ASkipEmptyLines, SLineBreak);
+  Result:= ConcatWords([AString1, AString2], ASkipEmptyLines);
 end;
 
 function ConcatLines(const AString1, AString2, AString3: string; const ASkipEmptyLines: Boolean = True): string;
