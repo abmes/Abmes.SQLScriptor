@@ -88,7 +88,7 @@ end;
 
 function ConcatLines(const AString1, AString2: string; const ASkipEmptyLines: Boolean = True): string;
 begin
-  Result:= ConcatWords([AString1, AString2], ASkipEmptyLines);
+  Result:= ConcatLines([AString1, AString2], ASkipEmptyLines);
 end;
 
 function ConcatLines(const AString1, AString2, AString3: string; const ASkipEmptyLines: Boolean = True): string;
