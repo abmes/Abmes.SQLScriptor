@@ -149,6 +149,7 @@ var
   Versions: TStringList;
   ScriptVersion: Integer;
   DownloadedScriptFileName: string;
+  DatabaseCount: Integer;
 begin
   try
     try
@@ -179,6 +180,8 @@ begin
         FProgressLogger.LogProgress('');
         FProgressLogger.LogProgress(FormatDatabaseInfo('Database', 'Version', 'Status'));
         FProgressLogger.LogProgress(''.PadRight(70, '-'));
+
+        DatabaseCount:= 0;
         ForEachDatabase(
           procedure(ADBName: string)
           var
@@ -188,47 +191,66 @@ begin
             Versions.Values[ADBName]:= DBVersion.ToString();
 
             FProgressLogger.LogProgress(FormatDatabaseInfo(ADBName, DBVersion.ToString(), GetDatabaseStatus(DBVersion, ScriptVersion)));
+
+            Inc(DatabaseCount);
           end
         );
         FProgressLogger.LogProgress('');
 
         if FExecuteScript then
           begin
-            ScriptFileName:= PersistScript(FScriptFileName);
-
-            FProgressLogger.LogProgress('Executing script on databases...');
-            ForEachDatabase(
-              procedure(ADBName: string)
-              var
-                DBVersion: Integer;
-                HasErrors: Boolean;
+            if (DatabaseCount = 0) then
               begin
-                FProgressLogger.LogProgress('');
-                FProgressLogger.LogProgress('Database: ' + ADBName);
-
-                DBVersion:= StrToInt(Versions.Values[ADBName]);
-
-                if (DBVersion < 0) then
-                  begin
-                    FProgressLogger.LogProgress('Skipped. Error occured getting the database version.');
-                  end
-                else
-                  if (DBVersion > ScriptVersion) then
-                    begin
-                      FProgressLogger.LogProgress('Skipped. Up to date or newer than script.');
-                    end
-                  else
-                    begin
-                      HasErrors:= True;
-                      try
-                        FProgressLogger.LogProgress('Updating...');
-                        HasErrors:= DoExecScript(ScriptFileName, ADBName, GetLogFileName(ScriptFileName, ADBName, FLogFolderName, LogDateTime));
-                      finally
-                        DoDBCompleted(ADBName, HasErrors);
-                      end;
-                    end;
+                FProgressLogger.LogProgress('No databases found.');
               end
-            );
+            else
+              begin
+                ScriptFileName:= PersistScript(FScriptFileName);
+
+                FProgressLogger.LogProgress(Format('Executing script on %d databases...', [DatabaseCount]));
+                ForEachDatabase(
+                  procedure(ADBName: string)
+                  var
+                    DBVersion: Integer;
+                    HasErrors: Boolean;
+                    HasWarnings: Boolean;
+                    ExecScriptResult: TExecScriptResult;
+                    LogFileName: string;
+                  begin
+                    FProgressLogger.LogProgress('');
+                    FProgressLogger.LogProgress('Database: ' + ADBName);
+
+                    DBVersion:= StrToInt(Versions.Values[ADBName]);
+
+                    if (DBVersion < 0) then
+                      begin
+                        FProgressLogger.LogProgress('Skipped. Error occured getting the database version.');
+                      end
+                    else
+                      if (DBVersion > ScriptVersion) then
+                        begin
+                          FProgressLogger.LogProgress('Skipped. Up to date or newer than script.');
+                        end
+                      else
+                        begin
+                          LogFileName:= GetLogFileName(ScriptFileName, ADBName, FLogFolderName, LogDateTime);
+
+                          HasErrors:= True;
+                          HasWarnings:= False;
+                          try
+                            FProgressLogger.LogProgress('Updating...');
+
+                            ExecScriptResult:= DoExecScript(ScriptFileName, ADBName, LogFileName);
+
+                            HasErrors:= ExecScriptResult.HasErrors;
+                            HasWarnings:= ExecScriptResult.HasWarnings;
+                          finally
+                            DoDBCompleted(ADBName, HasErrors, HasWarnings, LogFileName);
+                          end;
+                        end;
+                  end
+                );
+              end;
           end;
       finally
         Versions.Free;
