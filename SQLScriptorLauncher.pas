@@ -23,7 +23,8 @@ uses
   ConfigOracleConnectionParamsProvider, ConnectionsConfigLoader,
   ConsoleProgressLogger, OracleSQLConnectionInitializer, SQLScriptorWorkThread,
   Utils, FilteredDBConnectionNamesProvider, DatabaseVersionProvider,
-  OracleDatabaseVersionProvider;
+  OracleDatabaseVersionProvider, OracleWarningErrorMessagesProvider,
+  WarningErrorMessagesProvider;
 
 class procedure TSQLScriptorLauncher.Run(
   const AScriptFileName: string;
@@ -38,6 +39,7 @@ var
   LOracleSQLConnectionInitializer: TOracleSQLConnectionInitializer;
   LProgressLogger: TConsoleProgressLoader;
   LOracleDatabaseVersionProvider: IDatabaseVersionProvider;
+  LWarningErrorMessagesProvider: IWarningErrorMessagesProvider;
   LSQLScriptorWorkThread: TSQLScriptorWorkThread;
 begin
   LConnectionsConfig:= TConnectionsConfigLoader.Load(AConfigLocation);
@@ -46,11 +48,12 @@ begin
     LOracleSQLConnectionInitializer:= TOracleSQLConnectionInitializer.Create(LConfigOracleConnectionParamsProvider);
     LProgressLogger:= TConsoleProgressLoader.Create;
     LOracleDatabaseVersionProvider:= TOracleDatabaseVersionProvider.Create;
+    LWarningErrorMessagesProvider:= TOracleWarningErrorMessagesProvider.Create;
 
     LSQLScriptorWorkThread:=
       TSQLScriptorWorkThread.Create(AScriptFileName, ALogFolderName,
       TFilteredDBConnectionNamesProvider.GetFilteredDBConnectionNames(LConnectionsConfig, AFilterDBNames),
-      LOracleSQLConnectionInitializer, LProgressLogger, LOracleDatabaseVersionProvider, AExecuteScript);
+      LOracleSQLConnectionInitializer, LProgressLogger, LOracleDatabaseVersionProvider, LWarningErrorMessagesProvider, AExecuteScript);
     try
       if not LSQLScriptorWorkThread.Finished then
         LSQLScriptorWorkThread.WaitFor;

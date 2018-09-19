@@ -4,7 +4,18 @@ interface
 
 uses
   System.Classes, SQLConnectionInitializer, ProgressLogger, System.SysUtils,
-  DatabaseVersionProvider;
+  DatabaseVersionProvider, WarningErrorMessagesProvider;
+
+type
+  TExecScriptResult = record
+  strict private
+    FHasWarnings: Boolean;
+    FHasErrors: Boolean;
+  public
+    constructor Create(const AHasErrors, AHasWarnings: Boolean);
+    property HasErrors: Boolean read FHasErrors;
+    property HasWarnings: Boolean read FHasWarnings;
+  end;
 
 type
   TSQLScriptorWorkThread = class(TThread)
@@ -15,9 +26,10 @@ type
     FSQLConnectionInitializer: ISQLConnectionInitializer;
     FProgressLogger: IProgressLogger;
     FDatabaseVersionProvider: IDatabaseVersionProvider;
+    FWarningErrorMessagesProvider: IWarningErrorMessagesProvider;
     FExecuteScript: Boolean;
-    function DoExecScript(const AScriptFileName, ADBName, ALogFileName: string): Boolean;
-    procedure DoDBCompleted(const ADBName: string; const AHasErrors: Boolean);
+    function DoExecScript(const AScriptFileName, ADBName, ALogFileName: string): TExecScriptResult;
+    procedure DoDBCompleted(const ADBName: string; const AHasErrors, AHasWarnings: Boolean; const ALogFileName: string);
     procedure DoAllCompleted;
     function PersistScript(const AScriptFileName: string): string;
     procedure ForEachDatabase(AProc: TProc<string>);
@@ -37,6 +49,7 @@ type
       const ASQLConnectionInitializer: ISQLConnectionInitializer;
       const AProgressLogger: IProgressLogger;
       const ADatabaseVersionProvider: IDatabaseVersionProvider;
+      const AWarningErrorMessagesProvider: IWarningErrorMessagesProvider;
       const AExecuteScript: Boolean);
   end;
 
@@ -64,6 +77,7 @@ constructor TSQLScriptorWorkThread.Create(
   const ASQLConnectionInitializer: ISQLConnectionInitializer;
   const AProgressLogger: IProgressLogger;
   const ADatabaseVersionProvider: IDatabaseVersionProvider;
+  const AWarningErrorMessagesProvider: IWarningErrorMessagesProvider;
   const AExecuteScript: Boolean);
 begin
   inherited Create(False);
@@ -75,6 +89,7 @@ begin
   FSQLConnectionInitializer:= ASQLConnectionInitializer;
   FProgressLogger:= AProgressLogger;
   FDatabaseVersionProvider:= ADatabaseVersionProvider;
+  FWarningErrorMessagesProvider:= AWarningErrorMessagesProvider;
   FExecuteScript:= AExecuteScript;
 end;
 
@@ -82,21 +97,29 @@ procedure TSQLScriptorWorkThread.DoAllCompleted;
 begin
 end;
 
-procedure TSQLScriptorWorkThread.DoDBCompleted(const ADBName: string; const AHasErrors: Boolean);
+procedure TSQLScriptorWorkThread.DoDBCompleted(const ADBName: string; const AHasErrors, AHasWarnings: Boolean; const ALogFileName: string);
 begin
+  FProgressLogger.LogProgress(
+    Format('Done with %swarnings and %serrors.', [
+      IfThen(AHasWarnings, '', 'no '),
+      IfThen(AHasErrors, '', 'no ')
+    ])
+  );
+
+  FProgressLogger.LogProgress('Log file: ' + ALogFileName);
 end;
 
-function TSQLScriptorWorkThread.DoExecScript(const AScriptFileName, ADBName, ALogFileName: string): Boolean;
+function TSQLScriptorWorkThread.DoExecScript(const AScriptFileName, ADBName, ALogFileName: string): TExecScriptResult;
 var
   SQLScriptor: ISQLScriptor;
   Logger: ILogger;
 begin
   Logger:= TFileLogger.Create(ALogFileName);
 
-  SQLScriptor:= TSqlScriptor.Create(TDBXSqlStatementExecutorFactory.Create(ADBName, Logger, FSQLConnectionInitializer), Logger);
+  SQLScriptor:= TSqlScriptor.Create(TDBXSqlStatementExecutorFactory.Create(ADBName, Logger, FSQLConnectionInitializer, FWarningErrorMessagesProvider), Logger);
   SQLScriptor.ExecScript(AScriptFileName);
 
-  Result:= Logger.HasErrors;
+  Result:= TExecScriptResult.Create(Logger.HasErrors, Logger.HasWarnings);
 end;
 
 function GetDBLogFolder(const ADBName, ALogFolderName: string): string;
@@ -201,7 +224,7 @@ begin
           begin
             if (DatabaseCount = 0) then
               begin
-                FProgressLogger.LogProgress('No databases found.');
+                FProgressLogger.LogProgress('No database found.');
               end
             else
               begin
@@ -335,7 +358,7 @@ begin
   try
     VariablesSet:= TVariablesSet.Create(TVariables.Create);
 
-    ex:= TDBXSqlStatementExecutor.Create(ADBName, 0, nil, FSQLConnectionInitializer);
+    ex:= TDBXSqlStatementExecutor.Create(ADBName, 0, nil, FSQLConnectionInitializer, FWarningErrorMessagesProvider);
 
     Result:=
       FDatabaseVersionProvider.GetDatabaseVersion(
@@ -456,6 +479,14 @@ begin
   finally
     FreeAndNil(ScriptStream);
   end;
+end;
+
+{ TExecScriptResult }
+
+constructor TExecScriptResult.Create(const AHasErrors, AHasWarnings: Boolean);
+begin
+  FHasErrors:= AHasErrors;
+  FHasWarnings:= AHasWarnings;
 end;
 
 end.

@@ -31,7 +31,9 @@ uses
   SQLScriptorLauncher in 'SQLScriptorLauncher.pas',
   FilteredDBConnectionNamesProvider in 'Config\FilteredDBConnectionNamesProvider.pas',
   DatabaseVersionProvider in 'Core\DatabaseVersionProvider.pas',
-  OracleDatabaseVersionProvider in 'Oracle\OracleDatabaseVersionProvider.pas';
+  OracleDatabaseVersionProvider in 'Oracle\OracleDatabaseVersionProvider.pas',
+  WarningErrorMessagesProvider in 'Core\WarningErrorMessagesProvider.pas',
+  OracleWarningErrorMessagesProvider in 'Oracle\OracleWarningErrorMessagesProvider.pas';
 
 var
   ScriptFileName: string;

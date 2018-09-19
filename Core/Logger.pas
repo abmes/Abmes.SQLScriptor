@@ -4,7 +4,7 @@ interface
 
 type
   TLogMessageType = (lmtConnect, lmtDisconnect, lmtStatement, lmtException);
-  TLogMessageExecResult = (lmeOk, lmeFail);
+  TLogMessageExecResult = (lmeOk, lmeFail, lmeWarning);
   TLogMessageCounts = array[TLogMessageType, TLogMessageExecResult] of Integer;
 
 type
@@ -19,6 +19,7 @@ type
       const AMessageText: string = '');
 
     function HasErrors: Boolean;
+    function HasWarnings: Boolean;
   end;
 
 type
@@ -28,6 +29,7 @@ type
     procedure ClearLogMessageCounts;
     procedure BeginLogging;
     procedure EndLogging;
+    function HasLogMessageExecResult(const ALogMessageExecResult: TLogMessageExecResult): Boolean;
   strict protected
     procedure DoLog(const AText: string); virtual; abstract;
   protected
@@ -40,6 +42,7 @@ type
       const AMessageText: string = '');
 
     function HasErrors: Boolean;
+    function HasWarnings: Boolean;
 
     property LogMessageCounts: TLogMessageCounts read FLogMessageCounts;
   public
@@ -107,6 +110,7 @@ begin
     ConcatLines(
       ConcatLines(
         Format('%d statements successful', [FLogMessageCounts[lmtStatement, lmeOk]]),
+        Format('%d statements with warnings', [FLogMessageCounts[lmtStatement, lmeWarning]]),
         Format('%d statements failed', [FLogMessageCounts[lmtStatement, lmeFail]])
       ),
       ConcatLines(
@@ -119,14 +123,25 @@ begin
   ClearLogMessageCounts;
 end;
 
-function TBaseLogger.HasErrors: Boolean;
+function TBaseLogger.HasLogMessageExecResult(
+  const ALogMessageExecResult: TLogMessageExecResult): Boolean;
 var
   lmt: TLogMessageType;
 begin
   Result:= False;
   for lmt:= Low(TLogMessageType) to High(TLogMessageType) do
-    if (LogMessageCounts[lmt, lmeFail] > 0) then
+    if (LogMessageCounts[lmt, ALogMessageExecResult] > 0) then
       Exit(True);
+end;
+
+function TBaseLogger.HasErrors: Boolean;
+begin
+  Result:= HasLogMessageExecResult(lmeFail);
+end;
+
+function TBaseLogger.HasWarnings: Boolean;
+begin
+  Result:= HasLogMessageExecResult(lmeWarning);
 end;
 
 procedure TBaseLogger.LogMessage(
@@ -138,7 +153,7 @@ procedure TBaseLogger.LogMessage(
   const AMessageText: string);
 const
   LogMessageTypeText: array[TLogMessageType] of string = ('Connect', 'Disconnect', 'Statement', 'Exception');
-  LogMessageExecResultText: array[TLogMessageExecResult] of string = ('OK', 'Fail');
+  LogMessageExecResultText: array[TLogMessageExecResult] of string = ('OK', 'Fail', 'Warning');
 begin
   TempMonitorEnter(Self,
     procedure begin

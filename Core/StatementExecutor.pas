@@ -11,7 +11,8 @@ uses
   Utils,
   Logger,
   Variables,
-  FilePosition, ImmutableStack, System.SysUtils, SQLConnectionInitializer;
+  FilePosition, ImmutableStack, System.SysUtils, SQLConnectionInitializer,
+  WarningErrorMessagesProvider;
 
 type
   IQuery = interface
@@ -114,6 +115,8 @@ type
 
 type
   TDBSqlStatementExecutor = class abstract(TBaseSqlStatementExecutor)
+  strict private
+    function IsWarningErrorMessage(const AErrorMessage: string): Boolean;
   protected
     function GetQuery: IQuery; virtual; abstract;
     property Query: IQuery read GetQuery;
@@ -122,6 +125,7 @@ type
       const AVariablesSet: IVariablesSet;
       const AQueryParamsEnabled: Boolean;
       const AFilePositionHistory: IImmutableStack<IFilePosition>); override;
+    function GetWarningErrorMessages: TArray<string>; virtual; abstract;
   end;
 
 type
@@ -135,13 +139,16 @@ type
     FSQLMonitor: TSQLMonitor;
     FQuery: TAbmesSQLQuery;
     FQueryIntf: IQuery;
+    FWarningErrorMessagesProvider: IWarningErrorMessagesProvider;
     procedure DoConnect;
     procedure DoDisconnect;
   protected
     function GetQuery: IQuery; override;
+    function GetWarningErrorMessages: TArray<string>; override;
   public
     constructor Create(const ADBName: string; const AConnectionNo: Integer;
-      const ALogger: ILogger; const ASQLConnectionInitializer: ISQLConnectionInitializer);
+      const ALogger: ILogger; const ASQLConnectionInitializer: ISQLConnectionInitializer;
+      const AWarningErrorMessagesProvider: IWarningErrorMessagesProvider);
     destructor  Destroy; override;
   end;
 
@@ -150,12 +157,14 @@ type
   strict private
     FDBName: string;
     FSQLConnectionInitializer: ISQLConnectionInitializer;
+    FWarningErrorMessagesProvider: IWarningErrorMessagesProvider;
   protected
     function DoCreateExecutor: ISqlStatementExecutor; override;
     property DBName: string read FDBName;
   public
     constructor Create(const ADBName: string; const ALogger: ILogger;
-      const ASQLConnectionInitializer: ISQLConnectionInitializer);
+      const ASQLConnectionInitializer: ISQLConnectionInitializer;
+      const AWarningErrorMessagesProvider: IWarningErrorMessagesProvider);
   end;
 
 type
@@ -330,6 +339,14 @@ procedure TDBSqlStatementExecutor.ExecStatement(
         AFieldValuesText);
   end;
 
+  function GetExceptionLogMessageExecResult(const AException: Exception): TLogMessageExecResult;
+  begin
+    if IsWarningErrorMessage(AException.Message) then
+      Result:= lmeWarning
+    else
+      Result:= lmeFail;
+  end;
+
   procedure LoadFileParamValues(const AParams: TParams);
   var
     i: Integer;
@@ -411,7 +428,7 @@ begin
             if Assigned(Logger) then
               Logger.LogMessage(
                 lmtStatement,
-                lmeFail,
+                GetExceptionLogMessageExecResult(e),
                 BeginDateTime,
                 Now,
                 ConnectionNo,
@@ -429,16 +446,29 @@ begin
   except
     on e: Exception do
       if Assigned(Logger) then
-        Logger.LogMessage(lmtStatement, lmeFail, BeginDateTime, Now, ConnectionNo, FormatFilePositionHistory(AFilePositionHistory), e.Message)
+        Logger.LogMessage(lmtStatement, GetExceptionLogMessageExecResult(e), BeginDateTime, Now, ConnectionNo, FormatFilePositionHistory(AFilePositionHistory), e.Message)
       else
         raise;
   end;
 end;
 
+function TDBSqlStatementExecutor.IsWarningErrorMessage(
+  const AErrorMessage: string): Boolean;
+var
+  WarningErrorMessage: string;
+begin
+  for WarningErrorMessage in GetWarningErrorMessages do
+    if AErrorMessage.Contains(WarningErrorMessage) then
+      Exit(True);
+
+  Result:= False;
+end;
+
 { TDBXSqlStatementExecutor }
 
 constructor TDBXSqlStatementExecutor.Create(const ADBName: string; const AConnectionNo: Integer;
-  const ALogger: ILogger; const ASQLConnectionInitializer: ISQLConnectionInitializer);
+  const ALogger: ILogger; const ASQLConnectionInitializer: ISQLConnectionInitializer;
+  const AWarningErrorMessagesProvider: IWarningErrorMessagesProvider);
 var
   BeginDateTime: TDateTime;
 begin
@@ -446,6 +476,8 @@ begin
   try
     inherited Create(AConnectionNo, ALogger);
     FDBName:= ADBName;
+
+    FWarningErrorMessagesProvider:= AWarningErrorMessagesProvider;
 
     FSqlConnection:= TAbmesSQLConnection.Create(nil);
     FSqlConnection.LoginPrompt:= False;
@@ -511,6 +543,11 @@ begin
     Logger.LogMessage(lmtDisconnect, lmeOk, BeginDateTime, Now, ConnectionNo, FDBName);
 end;
 
+function TDBXSqlStatementExecutor.GetWarningErrorMessages: TArray<string>;
+begin
+  Result:= FWarningErrorMessagesProvider.GetWarningErrorMessages();
+end;
+
 function TDBXSqlStatementExecutor.GetQuery: IQuery;
 begin
   Result:= FQueryIntf;
@@ -519,7 +556,8 @@ end;
 { TDBXSqlStatementExecutorFactory }
 
 constructor TDBXSqlStatementExecutorFactory.Create(const ADBName: string;
-  const ALogger: ILogger; const ASQLConnectionInitializer: ISQLConnectionInitializer);
+  const ALogger: ILogger; const ASQLConnectionInitializer: ISQLConnectionInitializer;
+  const AWarningErrorMessagesProvider: IWarningErrorMessagesProvider);
 begin
   inherited Create(ALogger);
 
@@ -527,11 +565,12 @@ begin
 
   FDBName:= ADBName;
   FSQLConnectionInitializer:= ASQLConnectionInitializer;
+  FWarningErrorMessagesProvider:= AWarningErrorMessagesProvider;
 end;
 
 function TDBXSqlStatementExecutorFactory.DoCreateExecutor: ISqlStatementExecutor;
 begin
-  Result:= TDBXSqlStatementExecutor.Create(DBName, GetNewConnectionNo, Logger, FSQLConnectionInitializer);
+  Result:= TDBXSqlStatementExecutor.Create(DBName, GetNewConnectionNo, Logger, FSQLConnectionInitializer, FWarningErrorMessagesProvider);
 end;
 
 { TLogOnlySqlStatementExecutorFactory }
