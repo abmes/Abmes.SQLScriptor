@@ -46,8 +46,8 @@ resourcestring
 implementation
 
 uses
-  System.StrUtils, Winapi.TlHelp32, Winapi.Windows, System.Net.URLClient,
-  System.Net.HttpClient;
+  System.Types, System.StrUtils, Winapi.TlHelp32, Winapi.Windows,
+  System.Net.URLClient, System.Net.HttpClient;
 
 const
   SWebRequestUserAgentName = 'Abmes';
@@ -251,7 +251,27 @@ function HttpGetString(const AUrl: string; const AAccept: string = ''): string;
 var
   http: TRESTHTTP;
   ResponseStream: TStringStream;
+  HeadersString: string;
+  PureUrl: string;
+  UrlParts: TArray<string>;
+  HeaderString: string;
+  p: Integer;
+  HeaderName: string;
+  HeaderValue: string;
 begin
+  UrlParts:= SplitString(AUrl, '[');
+
+  if (Length(UrlParts) = 1) then
+    begin
+      PureUrl:= AUrl;
+      HeadersString:= '';
+    end
+  else
+    begin
+      PureUrl:= UrlParts[0];
+      HeadersString:= UrlParts[1].Trim([']']);
+    end;
+
   try
     ResponseStream:= TStringStream.Create;
     try
@@ -263,7 +283,20 @@ begin
         http.Request.AcceptCharSet:= 'UTF-8';
         http.Request.UserAgent:= SWebRequestUserAgentName;
 
-        http.Get(AUrl, ResponseStream);
+        if (HeadersString <> '') then
+           for HeaderString in SplitString(HeadersString, ';') do
+             begin
+               p:= Pos('=', HeaderString);
+               if (p <= 1) then
+                 raise Exception.Create('Invalid header format: ' + HeaderString);
+
+               HeaderName:= LeftStr(HeaderString, p-1);
+               HeaderValue:= MidStr(HeaderString, p+1, Length(HeaderString)).Trim(['"']);
+
+               http.Request.CustomHeaders.Values[HeaderName]:= HeaderValue;
+             end;
+
+        http.Get(PureUrl, ResponseStream);
 
         Result:= ResponseStream.DataString;
       finally
@@ -282,13 +315,49 @@ function HttpDownload(const AUrl, AFileName: string): string;
 var
   http: THTTPClient;
   ResponseStream: TFileStream;
+  Request: IHTTPRequest;
   Response: IHTTPResponse;
+  HeadersString: string;
+  PureUrl: string;
+  UrlParts: TArray<string>;
+  HeaderString: string;
+  p: Integer;
+  HeaderName: string;
+  HeaderValue: string;
 begin
+  UrlParts:= SplitString(AUrl, '[');
+
+  if (Length(UrlParts) = 1) then
+    begin
+      PureUrl:= AUrl;
+      HeadersString:= '';
+    end
+  else
+    begin
+      PureUrl:= UrlParts[0];
+      HeadersString:= UrlParts[1].Trim([']']);
+    end;
+
   ResponseStream:= TFileStream.Create(AFileName, fmCreate);
   try
     http:= THTTPClient.Create;
     try
-      Response:= http.Get(AUrl, ResponseStream);
+      Request:= http.GetRequest('GET', PureUrl);
+
+      if (HeadersString <> '') then
+         for HeaderString in SplitString(HeadersString, ';') do
+           begin
+             p:= Pos('=', HeaderString);
+             if (p <= 1) then
+               raise Exception.Create('Invalid header format: ' + HeaderString);
+
+             HeaderName:= LeftStr(HeaderString, p-1);
+             HeaderValue:= MidStr(HeaderString, p+1, Length(HeaderString)).Trim(['"']);
+
+             Request.AddHeader(HeaderName, HeaderValue);
+           end;
+
+      Response:= http.Execute(Request, ResponseStream);
 
       if (Response.StatusCode <> 200) then
         raise Exception.Create(Format('Error downloading file: %d %s', [Response.StatusCode, Response.StatusText]) + SLineBreak + Response.ContentAsString());
