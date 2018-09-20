@@ -224,7 +224,7 @@ begin
           begin
             if (DatabaseCount = 0) then
               begin
-                FProgressLogger.LogProgress('No database found.');
+                FProgressLogger.LogProgress('No databases found.');
               end
             else
               begin
