@@ -34,6 +34,7 @@ function HttpGetString(const AUrl: string; const AAccept: string = ''): string;
 function HttpDownload(const AUrl, AFileName: string): string;
 
 function IsURL(const AValue: string): Boolean;
+function GetURLFileExtension(const AValue: string): string;
 
 function VarToInt(const V: Variant): Integer;
 
@@ -374,6 +375,19 @@ end;
 function IsURL(const AValue: string): Boolean;
 begin
   Result:= StartsText('http://', AValue) or StartsText('https://', AValue);
+end;
+
+function GetURLFileExtension(const AValue: string): string;
+var
+  FileURL: string;
+  Segments: TArray<string>;
+  FileName: string;
+begin
+  Assert(AValue <> '');
+  FileURL:= SplitString(AValue, '?')[0];
+  Segments:= SplitString(FileURL, '/');
+  FileName:= Segments[Length(Segments)-1];
+  Result:= ExtractFileExt(FileName).Trim(['.']);
 end;
 
 function VarToInt(const V: Variant): Integer;

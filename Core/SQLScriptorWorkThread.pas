@@ -173,6 +173,7 @@ var
   ScriptVersion: Integer;
   DownloadedScriptFileName: string;
   DatabaseCount: Integer;
+  Ext: string;
 begin
   try
     try
@@ -188,7 +189,11 @@ begin
           FProgressLogger.LogProgress('');
           FProgressLogger.LogProgress('Downloading script ...');
 
-          DownloadedScriptFileName:= 'SQLScriptorScript-' + FormatDateTime('yyyymmdd-hhnnss', LogDateTime) + '.zip';
+          Ext:= GetURLFileExtension(FScriptFileName);
+          if (Ext = '') then
+            Ext:= 'sql';
+
+          DownloadedScriptFileName:= 'SQLScriptorScript-' + FormatDateTime('yyyymmdd-hhnnss', LogDateTime) + '.' + ext;
           DownloadedScriptFileName:= TPath.Combine(TempPath, DownloadedScriptFileName);
 
           FScriptFileName:= HttpDownload(FScriptFileName, DownloadedScriptFileName);
@@ -339,6 +344,7 @@ begin
       end;
 
       FProgressLogger.LogProgress('Done unpacking script.');
+      FProgressLogger.LogProgress('');
 
       SqlFileNames:= TDirectory.GetFiles(ScriptTempPath, '*.sql', TSearchOption.soAllDirectories);
 
