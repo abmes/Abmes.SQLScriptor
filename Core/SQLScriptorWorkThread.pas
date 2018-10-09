@@ -214,11 +214,22 @@ begin
           procedure(ADBName: string)
           var
             DBVersion: Integer;
+            ErrorMessage: string;
           begin
-            DBVersion:= GetDBVersion(ADBName);
+            try
+              ErrorMessage:= '';
+              DBVersion:= GetDBVersion(ADBName);
+            except
+              on E: Exception do
+                begin
+                  ErrorMessage:= Trim(E.Message);
+                  DBVersion:= -1;
+                end;
+            end;
+
             Versions.Values[ADBName]:= DBVersion.ToString();
 
-            FProgressLogger.LogProgress(FormatDatabaseInfo(ADBName, DBVersion.ToString(), GetDatabaseStatus(DBVersion, ScriptVersion)));
+            FProgressLogger.LogProgress(FormatDatabaseInfo(ADBName, DBVersion.ToString(), GetDatabaseStatus(DBVersion, ScriptVersion) + IfThen(ErrorMessage = '', '', ': ' + ErrorMessage)));
 
             Inc(DatabaseCount);
           end
@@ -361,28 +372,24 @@ var
   ex: ISqlStatementExecutor;
   VariablesSet: IVariablesSet;
 begin
-  try
-    VariablesSet:= TVariablesSet.Create(TVariables.Create);
+  VariablesSet:= TVariablesSet.Create(TVariables.Create);
 
-    ex:= TDBXSqlStatementExecutor.Create(ADBName, 0, nil, FSQLConnectionInitializer, FWarningErrorMessagesProvider);
+  ex:= TDBXSqlStatementExecutor.Create(ADBName, 0, nil, FSQLConnectionInitializer, FWarningErrorMessagesProvider);
 
-    Result:=
-      FDatabaseVersionProvider.GetDatabaseVersion(
-        procedure(ASQL: string) begin
-          ex.ExecStatement(
-            ASQL,
-            VariablesSet,
-            False,
-            TImmutableStack<IFilePosition>.Create);
-        end,
-        function(AVarName: string): Variant
-        begin
-          Result:= VariablesSet[AVarName]
-        end
-      );
-  except
-    Result:= -1;
-  end;
+  Result:=
+    FDatabaseVersionProvider.GetDatabaseVersion(
+      procedure(ASQL: string) begin
+        ex.ExecStatement(
+          ASQL,
+          VariablesSet,
+          False,
+          TImmutableStack<IFilePosition>.Create);
+      end,
+      function(AVarName: string): Variant
+      begin
+        Result:= VariablesSet[AVarName]
+      end
+    );
 end;
 
 function TSQLScriptorWorkThread.FileIsArchive(const AFileName: string): Boolean;
