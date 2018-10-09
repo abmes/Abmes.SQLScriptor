@@ -1,34 +1,32 @@
 Param(
   [Parameter(Mandatory=$true)] [string] $UserName,
   [Parameter(Mandatory=$true)] [string] $AwsProfileName,
-  [Parameter(Mandatory=$true)] [string] $AwsRegion,
-  [Parameter(Mandatory=$true)] [string] $AwsEcrRepository
+  [Parameter(Mandatory=$true)] [string] $AwsRegion
 )
+
+$containerName = "sqlscriptor"
+$version = "latest"
 
 Set-Location $PSScriptRoot/docker
 
 #build
-Copy-Item ..\Win32\Release\Abmes.SQLScriptor.exe -Destination .\bin -Force
+Copy-Item ..\Win32\Release\Abmes.${containerName}.exe -Destination .\bin -Force
 
-docker build -t $UserName/sqlscriptor:latest .
+docker build -t "$UserName/${containerName}:${version}" .
 
 
 #deploy
 
-if (!$AwsEcrRepository.Contains(".")) 
-{
-  $AwsEcrRepository = $AwsEcrRepository + ".dkr.ecr." + $AwsRegion + ".amazonaws.com"
-}
+$awsIdentityJson = &aws sts get-caller-identity --profile $AwsProfileName --region $AwsRegion
+$awsIdentity = ConvertFrom-Json ([string]::Join("", $awsIdentityJson))
+$awsAccountId = $awsIdentity.Account
 
-if (!$AwsEcrRepository.Contains("/")) 
-{
-  $AwsEcrRepository = $AwsEcrRepository + "/$UserName/sqlscriptor"
-}
+$awsEcrRepositoryUri = $awsAccountId + ".dkr.ecr." + $AwsRegion + ".amazonaws.com/$UserName/${containerName}"
 
 $command = &aws ecr get-login --profile $AwsProfileName --region $AwsRegion --no-include-email
 
 Invoke-Expression -Command $command
 
-docker tag ($UserName + "/sqlscriptor:latest") ($AwsEcrRepository + ":latest")
+docker tag ($UserName + "/${containerName}:${version}") ($awsEcrRepositoryUri + ":${version}")
 
-docker push ($AwsEcrRepository + ":latest")
+docker push ($awsEcrRepositoryUri + ":${version}")
