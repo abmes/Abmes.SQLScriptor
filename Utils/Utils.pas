@@ -40,11 +40,13 @@ function VarToInt(const V: Variant): Integer;
 
 function EnvVarOrValue(const AValue: string): string;
 
+function GetExeVersion: string;
+
 type
   TConstFunc<T,TResult> = reference to function (const Arg1: T): TResult;
 
 resourcestring
-  SAppSignature = 'Abmes SQLScript Utility 4.0';
+  SAppSignature = 'Abmes SQLScript Utility';
 
 implementation
 
@@ -406,6 +408,33 @@ begin
 
   if (Result = '') then
     Result:= AValue;
+end;
+
+function GetExeVersion: string;
+var
+  FileName: string;
+  InfoSize, Wnd: DWORD;
+  VerBuf: Pointer;
+  FI: PVSFixedFileInfo;
+  VerSize: DWORD;
+begin
+  FileName:= ParamStr(0);
+  UniqueString(FileName);
+  InfoSize:= GetFileVersionInfoSize(PChar(FileName), Wnd);
+  if (InfoSize <> 0) then
+    begin
+      GetMem(VerBuf, InfoSize);
+      try
+        if GetFileVersionInfo(PChar(FileName), Wnd, InfoSize, VerBuf) then
+          if VerQueryValue(VerBuf, '\', Pointer(FI), VerSize) then
+            Result:= IntToStr(HIWORD(FI.dwProductVersionMS)) + '.' +
+              IntToStr(LOWORD(FI.dwProductVersionMS)) + '.' +
+              IntToStr(HIWORD(FI.dwProductVersionLS)) + '.' +
+              IntToStr(LOWORD(FI.dwProductVersionLS));
+      finally
+        FreeMem(VerBuf);
+      end;  { try }
+    end;  { if }
 end;
 
 end.
