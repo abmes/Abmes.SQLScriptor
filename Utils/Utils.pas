@@ -38,6 +38,8 @@ function GetURLFileExtension(const AValue: string): string;
 
 function VarToInt(const V: Variant): Integer;
 
+function EnvVarOrValue(const AValue: string): string;
+
 type
   TConstFunc<T,TResult> = reference to function (const Arg1: T): TResult;
 
@@ -396,6 +398,14 @@ begin
     Result:= 0
   else
     Result:= V;
+end;
+
+function EnvVarOrValue(const AValue: string): string;
+begin
+  Result:= GetEnvironmentVariable(AValue);
+
+  if (Result = '') then
+    Result:= AValue;
 end;
 
 end.

@@ -52,15 +52,15 @@ begin
     if FindCmdLineSwitch('script', ScriptFileName) and
        FindCmdLineSwitch('logdir', LogFolderName) and
        FindCmdLineSwitch('config', ConfigLocation) then
-      TSQLScriptorLauncher.Run(ScriptFileName, LogFolderName, ConfigLocation, FilterDBNames, ExecuteScript)
+      TSQLScriptorLauncher.Run(EnvVarOrValue(ScriptFileName), LogFolderName, EnvVarOrValue(ConfigLocation), FilterDBNames, ExecuteScript)
     else
       begin
         Writeln(SAppSignature);
         Writeln('');
         Writeln('Switches:');
-        Writeln('  /script [ScriptFileName]');
+        Writeln('  /script [ScriptFileName|EnvVarForScriptFileName]');
         Writeln('  /logdir [LogsDirName]');
-        Writeln('  /config [FileOrHttpConfigLocation]');
+        Writeln('  /config [FileOrHttpConfigLocation|EnvVarForFileOrHttpConfigLocation]');
         Writeln('  /databases [CommaSeparatedFilterDBNames]');
         Writeln('  /versionsonly');
         Writeln('');
