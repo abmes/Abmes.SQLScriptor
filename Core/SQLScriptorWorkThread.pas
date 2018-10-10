@@ -180,7 +180,7 @@ begin
       FProgressLogger.LogProgress(SAppSignature);
       FProgressLogger.LogProgress('');
       FProgressLogger.LogProgress('Log folder: ' + FLogFolderName);
-      FProgressLogger.LogProgress('SQL script file: ' + FScriptFileName);
+      FProgressLogger.LogProgress('SQL script location: ' + FScriptFileName);
 
       LogDateTime:= Now;
 
