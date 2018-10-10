@@ -1,0 +1,31 @@
+[
+  {
+    "name": "[ContainerName]",
+    "image": "[ContainerImageUri]",
+    "cpu": 1024,
+    "memory": 500,
+    "environment": [
+      {
+        "name": "SQLSCRIPTOR_CONFIG_LOCATION",
+        "value": "SomeValue"
+      },
+      {
+        "name": "SQLSCRIPTOR_SCRIPT_LOCATION",
+        "value": "SomeValue"
+      },
+      {
+        "name": "SQLSCRIPTOR_DATABASES",
+        "value": "SomeValue"
+      }
+    ],
+    "logConfiguration": {
+      "logDriver": "awslogs",
+      "options": {
+        "awslogs-group": "/ecs/[ContainerName]",
+        "awslogs-region": "[AwsRegion]",
+        "awslogs-stream-prefix": "ecs"
+      }
+    },
+    "essential": true
+  }
+]
