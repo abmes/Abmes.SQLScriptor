@@ -27,6 +27,7 @@ $Env:BDS = (Get-ChildItem "C:\Program Files (x86)\Embarcadero\Studio" | sort Nam
 Set-Location $PSScriptRoot/docker
 
 Copy-Item ..\Win32\Release\Abmes.${ContainerName}.exe -Destination .\bin -Force
+Copy-Item .\AwsEcsLauncher.ps1 -Destination .\bin -Force
 
 docker build -t "$OrganizationName/${ContainerName}:${version}" .
 

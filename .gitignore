@@ -7,3 +7,5 @@ __history
 __recovery
 Win32
 /Docker/bin/Abmes.SQLScriptor.exe
+/Docker/bin
+/Abmes.SQLScriptor.res
