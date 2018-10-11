@@ -21,7 +21,7 @@ function Get-ContainerOverrides()
     $configLocationEnvVarJson   = Get-EnvVarJson "SQLSCRIPTOR_CONFIG_LOCATION" $ConfigLocation
     $scriptLocationEnvVarJson   = Get-EnvVarJson "SQLSCRIPTOR_SCRIPT_LOCATION" $ScriptLocation
     $databasesEnvVarJson        = Get-EnvVarJson "SQLSCRIPTOR_DATABASES" $dbs
-    $s3LogsBucketNameEnvVarJson = Get-EnvVarJson "AWS_S3_LOGS_BUCKET_NAME" $S3LogsBucketName
+    $s3LogsBucketNameEnvVarJson = Get-EnvVarJson "AWS_S3_LOGS_BUCKET_NAME" ($S3LogsBucketName + "@" + $AwsRegion)
 
     return "{`"containerOverrides`":[{`"name`":`"$ContainerName`",`"environment`":[$configLocationEnvVarJson,$scriptLocationEnvVarJson,$databasesEnvVarJson,$s3LogsBucketNameEnvVarJson]}]}"
 }

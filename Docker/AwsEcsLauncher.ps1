@@ -12,6 +12,9 @@ if ($s3LogsBucketName)
     Write-Host "Uploading logs to '$s3LogsBucketName' bucket..."
     Write-Host " "
 
+    $awsRegion = $s3LogsBucketName.Split("@")[1]
+    $s3LogsBucketName = $s3LogsBucketName.Split("@")[0]
+    
     $logFiles = Get-ChildItem -Path $logDir -Recurse -File
     
     foreach ($logFile in $logFiles)
@@ -20,7 +23,7 @@ if ($s3LogsBucketName)
 
         Write-Host $key
 
-        Write-S3Object -BucketName $s3LogsBucketName -Key $key -File $logFile.FullName -Region "eu-central-1"
+        Write-S3Object -BucketName $s3LogsBucketName -Key $key -File $logFile.FullName -Region $awsRegion
     }
 
     Write-Host " "
