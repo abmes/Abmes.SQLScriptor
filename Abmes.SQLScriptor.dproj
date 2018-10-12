@@ -142,6 +142,8 @@
         <DCCReference Include="Oracle\OracleDatabaseVersionProvider.pas"/>
         <DCCReference Include="Core\WarningErrorMessagesProvider.pas"/>
         <DCCReference Include="Oracle\OracleWarningErrorMessagesProvider.pas"/>
+        <DCCReference Include="Core\ProgressMultiLogger.pas"/>
+        <DCCReference Include="FileProgressLogger.pas"/>
         <BuildConfiguration Include="Release">
             <Key>Cfg_2</Key>
             <CfgParent>Base</CfgParent>

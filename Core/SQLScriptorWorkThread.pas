@@ -22,6 +22,7 @@ type
   strict private
     FScriptFileName: string;
     FLogFolderName: string;
+    FLogDateTime: TDateTime;
     FDBNames: TArray<string>;
     FSQLConnectionInitializer: ISQLConnectionInitializer;
     FProgressLogger: IProgressLogger;
@@ -45,6 +46,7 @@ type
     constructor Create(
       const AScriptFileName: string;
       const ALogFolderName: string;
+      const ALogDateTime: TDateTime;
       const ADBNames: TArray<string>;
       const ASQLConnectionInitializer: ISQLConnectionInitializer;
       const AProgressLogger: IProgressLogger;
@@ -73,6 +75,7 @@ resourcestring
 constructor TSQLScriptorWorkThread.Create(
   const AScriptFileName: string;
   const ALogFolderName: string;
+  const ALogDateTime: TDateTime;
   const ADBNames: TArray<string>;
   const ASQLConnectionInitializer: ISQLConnectionInitializer;
   const AProgressLogger: IProgressLogger;
@@ -85,6 +88,7 @@ begin
 
   FScriptFileName:= AScriptFileName;
   FLogFolderName:= ALogFolderName;
+  FLogDateTime:= ALogDateTime;
   FDBNames:= ADBNames;
   FSQLConnectionInitializer:= ASQLConnectionInitializer;
   FProgressLogger:= AProgressLogger;
@@ -122,23 +126,6 @@ begin
   Result:= TExecScriptResult.Create(Logger.HasErrors, Logger.HasWarnings);
 end;
 
-function GetDBLogFolder(const ADBName, ALogFolderName: string): string;
-begin
-  Result:= TPath.Combine(ALogFolderName, ADBName);
-end;
-
-function GetLogFileName(const AScriptFileName, ADBName, ALogFolderName: string; const ADateTime: TDateTime): string;
-begin
-  Result:=
-    TPath.Combine(
-      GetDBLogFolder(ADBName, ALogFolderName),
-      Format(
-        '%s_%s_%s.log',
-        [ TPath.GetFileNameWithoutExtension(AScriptFileName),
-          ADBName,
-          FormatDateTime('yyyy-mm-dd_hh-nn', ADateTime)]));
-end;
-
 function FormatDatabaseInfo(const ADatabase, AVersion, AStatus: string): string;
 begin
   Result:= ADatabase.PadRight(30) + AVersion.PadRight(10) + AStatus;
@@ -167,7 +154,6 @@ end;
 
 procedure TSQLScriptorWorkThread.Execute;
 var
-  LogDateTime: TDateTime;
   ScriptFileName: string;
   Versions: TStringList;
   ScriptVersion: Integer;
@@ -182,8 +168,6 @@ begin
       FProgressLogger.LogProgress('Log folder: ' + FLogFolderName);
       FProgressLogger.LogProgress('SQL script location: ' + FScriptFileName);
 
-      LogDateTime:= Now;
-
       if IsUrl(FScriptFileName) then
         begin
           FProgressLogger.LogProgress('');
@@ -193,7 +177,7 @@ begin
           if (Ext = '') then
             Ext:= 'sql';
 
-          DownloadedScriptFileName:= 'SQLScriptorScript-' + FormatDateTime('yyyymmdd-hhnnss', LogDateTime) + '.' + ext;
+          DownloadedScriptFileName:= 'SQLScriptorScript-' + FormatDateTime('yyyymmdd-hhnnss', FLogDateTime) + '.' + ext;
           DownloadedScriptFileName:= TPath.Combine(TempPath, DownloadedScriptFileName);
 
           FScriptFileName:= HttpDownload(FScriptFileName, DownloadedScriptFileName);
@@ -272,7 +256,7 @@ begin
                         end
                       else
                         begin
-                          LogFileName:= GetLogFileName(ScriptFileName, ADBName, FLogFolderName, LogDateTime);
+                          LogFileName:= GetLogFileName(ScriptFileName, ADBName, FLogFolderName, FLogDateTime);
 
                           HasErrors:= True;
                           HasWarnings:= False;

@@ -42,6 +42,8 @@ function EnvVarOrValue(const AValue: string): string;
 
 function GetExeVersion: string;
 
+function GetLogFileName(const AScriptFileName, ADBName, ALogFolderName: string; const ADateTime: TDateTime): string;
+
 type
   TConstFunc<T,TResult> = reference to function (const Arg1: T): TResult;
 
@@ -52,7 +54,7 @@ implementation
 
 uses
   System.Types, System.StrUtils, Winapi.TlHelp32, Winapi.Windows,
-  System.Net.URLClient, System.Net.HttpClient;
+  System.Net.URLClient, System.Net.HttpClient, System.IOUtils;
 
 const
   SWebRequestUserAgentName = 'Abmes';
@@ -435,6 +437,24 @@ begin
         FreeMem(VerBuf);
       end;  { try }
     end;  { if }
+end;
+
+function GetLogFileName(const AScriptFileName, ADBName, ALogFolderName: string; const ADateTime: TDateTime): string;
+
+  function GetDBLogFolder(const ADBName, ALogFolderName: string): string;
+  begin
+    Result:= TPath.Combine(ALogFolderName, ADBName);
+  end;
+
+begin
+  Result:=
+    TPath.Combine(
+      GetDBLogFolder(ADBName, ALogFolderName),
+      Format(
+        '%s_%s_%s.log',
+        [ TPath.GetFileNameWithoutExtension(AScriptFileName),
+          ADBName,
+          FormatDateTime('yyyy-mm-dd_hh-nn', ADateTime)]));
 end;
 
 end.

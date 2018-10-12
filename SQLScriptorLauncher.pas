@@ -24,7 +24,8 @@ uses
   ConsoleProgressLogger, OracleSQLConnectionInitializer, SQLScriptorWorkThread,
   Utils, FilteredDBConnectionNamesProvider, DatabaseVersionProvider,
   OracleDatabaseVersionProvider, OracleWarningErrorMessagesProvider,
-  WarningErrorMessagesProvider;
+  WarningErrorMessagesProvider, SQLConnectionInitializer, ProgressLogger,
+  ProgressMultiLogger, FileProgressLogger, System.SysUtils;
 
 class procedure TSQLScriptorLauncher.Run(
   const AScriptFileName: string;
@@ -36,22 +37,27 @@ class procedure TSQLScriptorLauncher.Run(
 var
   LConnectionsConfig: TConnectionsConfig;
   LConfigOracleConnectionParamsProvider: TConfigOracleConnectionParamsProvider;
-  LOracleSQLConnectionInitializer: TOracleSQLConnectionInitializer;
-  LProgressLogger: TConsoleProgressLoader;
+  LOracleSQLConnectionInitializer: ISQLConnectionInitializer;
+  LProgressLogger: IProgressLogger;
   LOracleDatabaseVersionProvider: IDatabaseVersionProvider;
   LWarningErrorMessagesProvider: IWarningErrorMessagesProvider;
   LSQLScriptorWorkThread: TSQLScriptorWorkThread;
+  LogDateTime: TDateTime;
+  ProgressLogFileName: string;
 begin
+  LogDateTime:= Now;
+  ProgressLogFileName:= GetLogFileName(AScriptFileName, '_sqlscriptor_', ALogFolderName, LogDateTime);
+
   LConnectionsConfig:= TConnectionsConfigLoader.Load(AConfigLocation);
   try
     LConfigOracleConnectionParamsProvider:= TConfigOracleConnectionParamsProvider.Create(LConnectionsConfig);
     LOracleSQLConnectionInitializer:= TOracleSQLConnectionInitializer.Create(LConfigOracleConnectionParamsProvider);
-    LProgressLogger:= TConsoleProgressLoader.Create;
+    LProgressLogger:= TProgressMultiLogger.Create([TConsoleProgressLogger.Create, TFileProgressLogger.Create(ProgressLogFileName)]);
     LOracleDatabaseVersionProvider:= TOracleDatabaseVersionProvider.Create;
     LWarningErrorMessagesProvider:= TOracleWarningErrorMessagesProvider.Create;
 
     LSQLScriptorWorkThread:=
-      TSQLScriptorWorkThread.Create(AScriptFileName, ALogFolderName,
+      TSQLScriptorWorkThread.Create(AScriptFileName, ALogFolderName, LogDateTime,
       TFilteredDBConnectionNamesProvider.GetFilteredDBConnectionNames(LConnectionsConfig, AFilterDBNames),
       LOracleSQLConnectionInitializer, LProgressLogger, LOracleDatabaseVersionProvider, LWarningErrorMessagesProvider, AExecuteScript);
     try

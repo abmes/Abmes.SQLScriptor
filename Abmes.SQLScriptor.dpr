@@ -33,7 +33,9 @@ uses
   DatabaseVersionProvider in 'Core\DatabaseVersionProvider.pas',
   OracleDatabaseVersionProvider in 'Oracle\OracleDatabaseVersionProvider.pas',
   WarningErrorMessagesProvider in 'Core\WarningErrorMessagesProvider.pas',
-  OracleWarningErrorMessagesProvider in 'Oracle\OracleWarningErrorMessagesProvider.pas';
+  OracleWarningErrorMessagesProvider in 'Oracle\OracleWarningErrorMessagesProvider.pas',
+  ProgressMultiLogger in 'Core\ProgressMultiLogger.pas',
+  FileProgressLogger in 'FileProgressLogger.pas';
 
 var
   ScriptFileName: string;
