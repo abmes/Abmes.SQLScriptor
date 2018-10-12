@@ -5,6 +5,7 @@ Param(
   [Parameter(Mandatory=$true)]  [string] $ScriptLocation,
   [Parameter(Mandatory=$false)] [string] $Databases,
   [Parameter(Mandatory=$true)]  [string] $S3LogsBucketName,
+  [switch] $Wait,
   [Parameter(Mandatory=$true)]  [string] $AwsProfileName,
   [Parameter(Mandatory=$true)]  [ValidateSet("eu-central-1")] [string] $AwsRegion
 )
@@ -33,9 +34,22 @@ function Main()
     $tempContainerOverridesFileName = "tempcontaineroverrides.json"
     Set-Content -Path $tempContainerOverridesFileName -Value $containerOverrides
 
-    &aws ecs run-task --cluster $ClusterName --task-definition $ContainerName --overrides "file://$tempContainerOverridesFileName" --profile $AwsProfileName --region $AwsRegion
+    $runJson = &aws ecs run-task --cluster $ClusterName --task-definition $ContainerName --overrides "file://$tempContainerOverridesFileName" --profile $AwsProfileName --region $AwsRegion
+    $runJson
 
     Remove-Item $tempContainerOverridesFileName
+
+    $run = ConvertFrom-Json ([string]::Join("", $runJson))
+
+    $taskArn = $run.tasks[0].taskArn
+
+    if ($Wait.IsPresent)
+    {
+        Write-Host ""
+        Write-Host "Waiting task $taskArn to stop..."
+
+        &aws ecs wait tasks-stopped --cluster $ClusterName --tasks $taskArn --profile $AwsProfileName --region $AwsRegion
+    }
 }
 
 Main
