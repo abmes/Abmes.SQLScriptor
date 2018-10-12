@@ -160,6 +160,8 @@ var
   DownloadedScriptFileName: string;
   DatabaseCount: Integer;
   Ext: string;
+  FDatabaseWithErrorsCount: Integer;
+  FDatabaseWithWarningsCount: Integer;
 begin
   try
     try
@@ -230,6 +232,9 @@ begin
               begin
                 ScriptFileName:= PersistScript(FScriptFileName);
 
+                FDatabaseWithErrorsCount:= 0;
+                FDatabaseWithWarningsCount:= 0;
+
                 FProgressLogger.LogProgress(Format('Executing script on %d databases...', [DatabaseCount]));
                 ForEachDatabase(
                   procedure(ADBName: string)
@@ -267,12 +272,19 @@ begin
 
                             HasErrors:= ExecScriptResult.HasErrors;
                             HasWarnings:= ExecScriptResult.HasWarnings;
+
+                            Inc(FDatabaseWithErrorsCount, Ord(HasErrors));
+                            Inc(FDatabaseWithWarningsCount, Ord(HasWarnings));
                           finally
                             DoDBCompleted(ADBName, HasErrors, HasWarnings, LogFileName);
                           end;
                         end;
                   end
                 );
+
+                FProgressLogger.LogProgress('');
+                FProgressLogger.LogProgress(Format('%d databases with errors', [FDatabaseWithErrorsCount]));
+                FProgressLogger.LogProgress(Format('%d databases with warnings', [FDatabaseWithWarningsCount]));
               end;
           end;
       finally
