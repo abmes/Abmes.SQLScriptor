@@ -7,15 +7,19 @@
     "environment": [
       {
         "name": "SQLSCRIPTOR_CONFIG_LOCATION",
-        "value": "SomeValue"
+        "value": "https://someurl[header=value]"
       },
       {
         "name": "SQLSCRIPTOR_SCRIPT_LOCATION",
-        "value": "SomeValue"
+        "value": "https://someurl[header=value]"
       },
       {
         "name": "SQLSCRIPTOR_DATABASES",
-        "value": "SomeValue"
+        "value": "db1,db2,db3"
+      },
+      {
+        "name": "AWS_S3_LOGS_BUCKET_NAME",
+        "value": "BucketName@AwsRegion"
       }
     ],
     "logConfiguration": {

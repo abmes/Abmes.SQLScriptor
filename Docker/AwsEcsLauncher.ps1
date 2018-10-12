@@ -8,13 +8,13 @@ $s3LogsBucketName = $env:AWS_S3_LOGS_BUCKET_NAME
 
 if ($s3LogsBucketName)
 {
+    $awsRegion = $s3LogsBucketName.Split("@")[1]
+    $s3LogsBucketName = $s3LogsBucketName.Split("@")[0]
+    
     Write-Host " "
     Write-Host "Uploading logs to '$s3LogsBucketName' bucket..."
     Write-Host " "
 
-    $awsRegion = $s3LogsBucketName.Split("@")[1]
-    $s3LogsBucketName = $s3LogsBucketName.Split("@")[0]
-    
     $logFiles = Get-ChildItem -Path $logDir -Recurse -File
     
     foreach ($logFile in $logFiles)
