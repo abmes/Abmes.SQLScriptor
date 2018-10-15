@@ -168,7 +168,7 @@ begin
       FProgressLogger.LogProgress(SAppSignature);
       FProgressLogger.LogProgress('');
       FProgressLogger.LogProgress('Log folder: ' + FLogFolderName);
-      FProgressLogger.LogProgress('SQL script location: ' + FScriptFileName);
+      FProgressLogger.LogProgress('SQL script location: ' + FScriptFileName.Split(['['])[0]);
 
       if IsUrl(FScriptFileName) then
         begin
