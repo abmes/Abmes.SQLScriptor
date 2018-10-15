@@ -102,14 +102,19 @@ begin
 end;
 
 procedure TSQLScriptorWorkThread.DoDBCompleted(const ADBName: string; const AHasErrors, AHasWarnings: Boolean; const ALogFileName: string);
+var
+  LogMessage: string;
 begin
-  FProgressLogger.LogProgress(
-    Format('Done with %swarnings and %serrors.', [
-      IfThen(AHasWarnings, '', 'no '),
-      IfThen(AHasErrors, '', 'no ')
-    ])
-  );
+  if AHasErrors and not AHasWarnings then
+    LogMessage:= 'Done with errors and no warnings.'
+  else
+    LogMessage:=
+      Format('Done with %swarnings and %serrors.', [
+        IfThen(AHasWarnings, '', 'no '),
+        IfThen(AHasErrors, '', 'no ')
+      ]);
 
+  FProgressLogger.LogProgress(LogMessage);
   FProgressLogger.LogProgress('Log file: ' + ALogFileName);
 end;
 
