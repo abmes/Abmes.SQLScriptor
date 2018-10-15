@@ -107,8 +107,8 @@
         <VerInfo_Locale>1033</VerInfo_Locale>
         <VerInfo_Release>3</VerInfo_Release>
         <VerInfo_MajorVer>4</VerInfo_MajorVer>
-        <VerInfo_Build>46</VerInfo_Build>
-        <VerInfo_Keys>CompanyName=Abmes;FileDescription=SQL scripting utility;FileVersion=4.0.3.46;InternalName=;LegalCopyright=Abmes 2018;LegalTrademarks=;OriginalFilename=;ProductName=SQL Scriptor;ProductVersion=4.0.3.46;Comments=</VerInfo_Keys>
+        <VerInfo_Build>47</VerInfo_Build>
+        <VerInfo_Keys>CompanyName=Abmes;FileDescription=SQL scripting utility;FileVersion=4.0.3.47;InternalName=;LegalCopyright=Abmes 2018;LegalTrademarks=;OriginalFilename=;ProductName=SQL Scriptor;ProductVersion=4.0.3.47;Comments=</VerInfo_Keys>
         <Manifest_File>None</Manifest_File>
     </PropertyGroup>
     <ItemGroup>

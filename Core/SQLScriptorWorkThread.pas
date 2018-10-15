@@ -175,7 +175,7 @@ begin
           FProgressLogger.LogProgress('');
           FProgressLogger.LogProgress('Downloading script ...');
 
-          Ext:= GetURLFileExtension(FScriptFileName);
+          Ext:= GetURLFileExtension(FScriptFileName.Split(['['])[0]);
           if (Ext = '') then
             Ext:= 'sql';
 
