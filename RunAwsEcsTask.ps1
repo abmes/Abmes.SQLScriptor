@@ -4,6 +4,7 @@ Param(
   [Parameter(Mandatory=$true)]  [string] $ConfigLocation,
   [Parameter(Mandatory=$true)]  [string] $ScriptLocation,
   [Parameter(Mandatory=$false)] [string] $Databases,
+  [switch] $VersionsOnly,
   [Parameter(Mandatory=$true)]  [string] $S3LogsBucketName,
   [switch] $Wait,
   [Parameter(Mandatory=$true)]  [string] $AwsProfileName,
@@ -18,13 +19,15 @@ function Get-EnvVarJson([string] $envVarName, [string] $envVarValue)
 function Get-ContainerOverrides()
 {
     $dbs = if ($Databases) { $Databases } else { "*" }
+    $versionsOnlyValue = if ($VersionsOnly.IsPresent) { "1" } else { "0" }
 
     $configLocationEnvVarJson   = Get-EnvVarJson "SQLSCRIPTOR_CONFIG_LOCATION" $ConfigLocation
     $scriptLocationEnvVarJson   = Get-EnvVarJson "SQLSCRIPTOR_SCRIPT_LOCATION" $ScriptLocation
     $databasesEnvVarJson        = Get-EnvVarJson "SQLSCRIPTOR_DATABASES" $dbs
+    $versionsOnlyEnvVarJson     = Get-EnvVarJson "SQLSCRIPTOR_VERSIONSONLY" $versionsOnlyValue
     $s3LogsBucketNameEnvVarJson = Get-EnvVarJson "AWS_S3_LOGS_BUCKET_NAME" ($S3LogsBucketName + "@" + $AwsRegion)
 
-    return "{`"containerOverrides`":[{`"name`":`"$ContainerName`",`"environment`":[$configLocationEnvVarJson,$scriptLocationEnvVarJson,$databasesEnvVarJson,$s3LogsBucketNameEnvVarJson]}]}"
+    return "{`"containerOverrides`":[{`"name`":`"$ContainerName`",`"environment`":[$configLocationEnvVarJson,$scriptLocationEnvVarJson,$databasesEnvVarJson,$versionsOnlyEnvVarJson,$s3LogsBucketNameEnvVarJson]}]}"
 }
 
 function Main()

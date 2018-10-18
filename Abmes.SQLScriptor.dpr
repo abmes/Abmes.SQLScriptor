@@ -43,13 +43,17 @@ var
   ConfigLocation: string;
   FilterDBNames: string;
   ExecuteScript: Boolean;
+  VersionsOnly: string;
 
 begin
   try
     if not FindCmdLineSwitch('databases', FilterDBNames) then
       FilterDBNames:= '';
 
-    ExecuteScript:= not FindCmdLineSwitch('versionsonly');
+    FindCmdLineSwitch('versionsonly', VersionsOnly);
+    ExecuteScript:=
+      not FindCmdLineSwitch('versionsonly') or
+      (EnvVarOrValue(VersionsOnly) = '0');
 
     if FindCmdLineSwitch('script', ScriptFileName) and
        FindCmdLineSwitch('logdir', LogFolderName) and

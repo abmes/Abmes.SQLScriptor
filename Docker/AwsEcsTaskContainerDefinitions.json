@@ -18,6 +18,10 @@
         "value": "db1,db2,db3"
       },
       {
+        "name": "SQLSCRIPTOR_VERSIONSONLY",
+        "value": "0 or 1"
+      },
+      {
         "name": "AWS_S3_LOGS_BUCKET_NAME",
         "value": "BucketName@AwsRegion"
       }

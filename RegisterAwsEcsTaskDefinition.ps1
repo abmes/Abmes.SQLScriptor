@@ -1,9 +1,9 @@
 Param(
-  [Parameter(Mandatory=$true)]  [string] $OrganizationName,
-  [Parameter(Mandatory=$true)]  [string] $ContainerName,
-  [Parameter(Mandatory=$false)] [string] $TaskRoleName,
-  [Parameter(Mandatory=$true)]  [string] $AwsProfileName,
-  [Parameter(Mandatory=$true)]  [ValidateSet("eu-central-1")] [string] $AwsRegion
+  [Parameter(Mandatory=$true)] [string] $OrganizationName,
+  [Parameter(Mandatory=$true)] [string] $ContainerName,
+  [Parameter(Mandatory=$true)] [string] $TaskRoleName,
+  [Parameter(Mandatory=$true)] [string] $AwsProfileName,
+  [Parameter(Mandatory=$true)] [ValidateSet("eu-central-1")] [string] $AwsRegion
 )
 
 $version = "latest"

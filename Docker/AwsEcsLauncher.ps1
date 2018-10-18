@@ -1,7 +1,7 @@
 $logDir = "C:\Logs\SQLScriptor"
 
 
-.\Abmes.SQLScriptor.exe /logdir $logDir /config "SQLSCRIPTOR_CONFIG_LOCATION" /script "SQLSCRIPTOR_SCRIPT_LOCATION" /databases "SQLSCRIPTOR_DATABASES"
+.\Abmes.SQLScriptor.exe /logdir $logDir /config "SQLSCRIPTOR_CONFIG_LOCATION" /script "SQLSCRIPTOR_SCRIPT_LOCATION" /databases "SQLSCRIPTOR_DATABASES" /versionsonly "SQLSCRIPTOR_VERSIONSONLY"
 
 
 $s3LogsBucketName = $env:AWS_S3_LOGS_BUCKET_NAME
