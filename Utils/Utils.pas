@@ -463,7 +463,7 @@ begin
         '%s_%s_%s.log',
         [ TPath.GetFileNameWithoutExtension(AScriptFileName),
           ADBName,
-          FormatDateTime('yyyy-mm-dd_hh-nn', ADateTime)]));
+          FormatDateTime('yyyy-mm-dd_hh-nn-ss', ADateTime)]));
 end;
 
 end.
