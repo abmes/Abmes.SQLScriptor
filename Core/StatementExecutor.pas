@@ -30,6 +30,8 @@ type
     procedure Open;
     procedure Close;
     procedure ExecSQL;
+    procedure Next;
+    function Eof: Boolean;
 
     property Fields: TFields read GetFields;
     property Params: TParams read GetParams;
@@ -44,6 +46,7 @@ type
   TQueryProxy = class(TInterfacedObject, IQuery)
   strict private
     FQuery: TAbmesSQLQuery;
+    FRecordCount: Integer;
   protected
     function GetFields: TFields;
     function GetParams: TParams;
@@ -58,6 +61,8 @@ type
     procedure Open;
     procedure Close;
     procedure ExecSQL;
+    procedure Next;
+    function Eof: Boolean;
   public
     constructor Create(const AQuery: TAbmesSQLQuery);
   end;
@@ -315,7 +320,7 @@ procedure TDBSqlStatementExecutor.ExecStatement(
   begin
     Result:=
       Format('Rows selected: %d', [ARecordCount]) +
-      IfThen((ARecordCount > 1), ' (only first row used)');
+      IfThen((ARecordCount > 1), ' (only first row used for variables binding)');
   end;
 
   function FormatRowsAffected(const ARowsAffected: Integer): string;
@@ -398,7 +403,17 @@ begin
                 if not Query.IsEmpty then
                   begin
                     AVariablesSet.SetValuesFromFields(Query.Fields);
-                    FieldValuesText:= GetAllFieldValuesAsText(Query.Fields);
+
+                    FieldValuesText:= '';
+                    while not Query.Eof do
+                      begin
+                        if (FieldValuesText <> '') then
+                          FieldValuesText:= FieldValuesText + SLineBreak + SLineBreak;
+
+                        FieldValuesText:= FieldValuesText + GetAllFieldValuesAsText(Query.Fields);
+
+                        Query.Next;
+                      end;
                   end;
 
                 RecordCountText:= FormatRecordCount(Query.RecordCount);
@@ -613,7 +628,19 @@ end;
 
 procedure TQueryProxy.ExecSQL;
 begin
+  FRecordCount:= -1;
   FQuery.ExecSQL;
+end;
+
+procedure TQueryProxy.Next;
+begin
+  FQuery.Next;
+  Inc(FRecordCount);
+end;
+
+function TQueryProxy.Eof: Boolean;
+begin
+  Result:= FQuery.Eof;
 end;
 
 function TQueryProxy.GetFields: TFields;
@@ -638,12 +665,13 @@ end;
 
 function TQueryProxy.GetRecordCount: Integer;
 begin
-  Result:= 0;
   while not FQuery.Eof do
     begin
-      Inc(Result);
+      Inc(FRecordCount);
       FQuery.Next;
     end;
+
+  Result:= FRecordCount;
 end;
 
 function TQueryProxy.GetRowsAffected: Integer;
@@ -658,11 +686,13 @@ end;
 
 procedure TQueryProxy.Open;
 begin
+  FRecordCount:= 0;
   FQuery.Open;
 end;
 
 procedure TQueryProxy.Close;
 begin
+  FRecordCount:= -1;
   FQuery.Close;
 end;
 
