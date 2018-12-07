@@ -48,11 +48,16 @@ begin
   LogDateTime:= Now;
   ProgressLogFileName:= GetLogFileName(AScriptFileName, '_sqlscriptor_', ALogFolderName, LogDateTime);
 
+  LProgressLogger:= TProgressMultiLogger.Create([TConsoleProgressLogger.Create, TFileProgressLogger.Create(ProgressLogFileName)]);
+
+  LProgressLogger.LogProgress(SAppSignature);
+  LProgressLogger.LogProgress('');
+  LProgressLogger.LogProgress('Config location: ' + AConfigLocation);
+
   LConnectionsConfig:= TConnectionsConfigLoader.Load(AConfigLocation);
   try
     LConfigOracleConnectionParamsProvider:= TConfigOracleConnectionParamsProvider.Create(LConnectionsConfig);
     LOracleSQLConnectionInitializer:= TOracleSQLConnectionInitializer.Create(LConfigOracleConnectionParamsProvider);
-    LProgressLogger:= TProgressMultiLogger.Create([TConsoleProgressLogger.Create, TFileProgressLogger.Create(ProgressLogFileName)]);
     LOracleDatabaseVersionProvider:= TOracleDatabaseVersionProvider.Create;
     LWarningErrorMessagesProvider:= TOracleWarningErrorMessagesProvider.Create;
 

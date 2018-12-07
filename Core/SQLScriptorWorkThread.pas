@@ -170,8 +170,6 @@ var
 begin
   try
     try
-      FProgressLogger.LogProgress(SAppSignature);
-      FProgressLogger.LogProgress('');
       FProgressLogger.LogProgress('Log folder: ' + FLogFolderName);
       FProgressLogger.LogProgress('SQL script location: ' + FScriptFileName.Split(['['])[0]);
 
