@@ -35,6 +35,7 @@ function HttpDownload(const AUrl, AFileName: string): string;
 
 function IsURL(const AValue: string): Boolean;
 function GetURLFileExtension(const AValue: string): string;
+function GetHeaderlessURL(const AValue: string): string;
 
 function VarToInt(const V: Variant): Integer;
 
@@ -394,6 +395,14 @@ begin
   Segments:= SplitString(FileURL, '/');
   FileName:= Segments[Length(Segments)-1];
   Result:= ExtractFileExt(FileName).Trim(['.']);
+end;
+
+function GetHeaderlessURL(const AValue: string): string;
+begin
+  if IsURL(AValue) then
+    Result:= AValue.Split(['['])[0]
+  else
+    Result:= AValue;
 end;
 
 function VarToInt(const V: Variant): Integer;

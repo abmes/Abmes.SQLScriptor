@@ -52,7 +52,7 @@ begin
 
   LProgressLogger.LogProgress(SAppSignature);
   LProgressLogger.LogProgress('');
-  LProgressLogger.LogProgress('Config location: ' + AConfigLocation);
+  LProgressLogger.LogProgress('Config location: ' + GetHeaderlessURL(AConfigLocation));
 
   LConnectionsConfig:= TConnectionsConfigLoader.Load(AConfigLocation);
   try
