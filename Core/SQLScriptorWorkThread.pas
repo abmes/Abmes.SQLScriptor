@@ -418,7 +418,7 @@ begin
     if FileIsArchive(AScriptFileName) then
       LoadScriptFromArchive(AScriptFileName, sl)
     else
-      sl.LoadFromFile(AScriptFileName);
+      sl.LoadFromFile(AScriptFileName, TEncoding.UTF8);
 
     for i:= sl.Count-1 downto 0 do
       begin

@@ -358,7 +358,7 @@ begin
     try
       sl:= TStringList.Create;
       try
-        sl.LoadFromFile(AFileName);
+        sl.LoadFromFile(AFileName, TEncoding.UTF8);
         for CurrentLineText in sl do
           begin
             Inc(CurrentLineNo);
