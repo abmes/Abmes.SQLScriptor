@@ -5,9 +5,9 @@ interface
 uses
   DB,
   SqlExpr,
-  AbmesSQLConnection,
-  AbmesSQLQuery,
+{$IF defined(MSWINDOWS)}
   OtlThreadPool,
+{$ENDIF}
   Utils,
   Logger,
   Variables,
@@ -45,7 +45,7 @@ type
 type
   TQueryProxy = class(TInterfacedObject, IQuery)
   strict private
-    FQuery: TAbmesSQLQuery;
+    FQuery: TSQLQuery;
     FRecordCount: Integer;
   protected
     function GetFields: TFields;
@@ -64,7 +64,7 @@ type
     procedure Next;
     function Eof: Boolean;
   public
-    constructor Create(const AQuery: TAbmesSQLQuery);
+    constructor Create(const AQuery: TSQLQuery);
   end;
 
 type
@@ -81,8 +81,10 @@ type
   ISqlStatementExecutorFactory = interface
   ['{E6979B40-5CEF-428C-8E8F-A805C88092F5}']
     function DoCreateExecutor: ISqlStatementExecutor;
+{$IF defined(MSWINDOWS)}
     function GetThreadDataFactoryMethod: TOTPThreadDataFactoryMethod;
     property ThreadDataFactoryMethod: TOTPThreadDataFactoryMethod read GetThreadDataFactoryMethod;
+{$ENDIF}
   end;
 
 type
@@ -110,7 +112,9 @@ type
   protected
     function DoCreateExecutor: ISqlStatementExecutor; virtual; abstract;
     function CreateExecutor: IInterface;
+{$IF defined(MSWINDOWS)}
     function GetThreadDataFactoryMethod: TOTPThreadDataFactoryMethod;
+{$ENDIF}
 
     function GetNewConnectionNo: Integer;
     property Logger: ILogger read FLogger;
@@ -140,9 +144,11 @@ type
   TDBXSqlStatementExecutor = class(TDBSqlStatementExecutor)
   strict private
     FDBName: string;
-    FSqlConnection: TAbmesSQLConnection;
+    FSqlConnection: TSQLConnection;
+{$IF defined(MSWINDOWS)}
     FSQLMonitor: TSQLMonitor;
-    FQuery: TAbmesSQLQuery;
+{$ENDIF}
+    FQuery: TSQLQuery;
     FQueryIntf: IQuery;
     FWarningErrorMessagesProvider: IWarningErrorMessagesProvider;
     procedure DoConnect;
@@ -194,11 +200,14 @@ type
 implementation
 
 uses
+{$IF defined(MSWINDOWS)}
   Windows,
+  SQLMonitorUtils,
+{$ENDIF}
   Classes,
   StrUtils,
   Variants,
-  Generics.Defaults, SQLMonitorUtils;
+  Generics.Defaults;
 
 const
   SSelect = 'select';
@@ -236,13 +245,15 @@ end;
 
 function TBaseSqlStatementExecutorFactory.GetNewConnectionNo: Integer;
 begin
-  Result:= InterlockedIncrement(FMaxConnectionNo);
+  Result:= AtomicIncrement(FMaxConnectionNo);
 end;
 
+{$IF defined(MSWINDOWS)}
 function TBaseSqlStatementExecutorFactory.GetThreadDataFactoryMethod: TOTPThreadDataFactoryMethod;
 begin
   Result:= CreateExecutor;
 end;
+{$ENDIF}
 
 { TDBSqlStatementExecutor }
 
@@ -494,16 +505,17 @@ begin
 
     FWarningErrorMessagesProvider:= AWarningErrorMessagesProvider;
 
-    FSqlConnection:= TAbmesSQLConnection.Create(nil);
+    FSqlConnection:= TSQLConnection.Create(nil);
     FSqlConnection.LoginPrompt:= False;
     ASQLConnectionInitializer.InitSQLConnection(FSqlConnection, FDBName);
 
+{$IF defined(MSWINDOWS)}
     FSQLMonitor:= CreateSQLMonitor(FSqlConnection);
+{$ENDIF}
 
-    FQuery:= TAbmesSQLQuery.Create(nil);
+    FQuery:= TSQLQuery.Create(nil);
     FQuery.SQLConnection:= FSqlConnection;
     FQuery.ParamCheck:= False;
-    FQuery.MacroChar:= #0;
 
     FQueryIntf:= TQueryProxy.Create(FQuery);
 
@@ -528,7 +540,9 @@ begin
 
   FQueryIntf:= nil;
   FreeAndNil(FQuery);
+{$IF defined(MSWINDOWS)}
   FreeAndNil(FSQLMonitor);
+{$ENDIF}
   FreeAndNil(FSqlConnection);
   inherited;
 end;
@@ -620,7 +634,7 @@ end;
 
 { TQueryProxy }
 
-constructor TQueryProxy.Create(const AQuery: TAbmesSQLQuery);
+constructor TQueryProxy.Create(const AQuery: TSQLQuery);
 begin
   inherited Create;
   FQuery:= AQuery;

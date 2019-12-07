@@ -13,8 +13,10 @@ type
     ltTerm,
     ltInclude,
     ltParams,
+{$IF defined(MSWINDOWS)}
     ltParallel,
     ltMaxParallel,
+{$ENDIF}
     ltSql
   );
 
@@ -44,8 +46,10 @@ const
     'term',                 // ltTerm
     'include',              // ltInclude
     'params',               // ltParams
+{$IF defined(MSWINDOWS)}
     'parallel',             // ltParallel
     'maxparallel',          // ltMaxParallel
+{$ENDIF}
     'Some SQL Text'         // ltSql
   );
 

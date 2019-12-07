@@ -3,9 +3,11 @@
 interface
 
 uses
+{$IF defined(MSWINDOWS)}
   OtlTask,
   OtlTaskControl,
   OtlThreadPool,
+{$ENDIF}
   Utils,
   Variables,
   FilePosition,
@@ -33,13 +35,15 @@ type
 type
   TSqlScriptor = class(TInterfacedObject, ISqlScriptor)
   strict private
-    FParseThreadPool: IOmniThreadPool;
-    FExecThreadPool: IOmniThreadPool;
     FGlobalVariables: IVariables;
     FExecutorFactory: ISqlStatementExecutorFactory;
     FLogger: ILogger;
+{$IF defined(MSWINDOWS)}
+    FParseThreadPool: IOmniThreadPool;
+    FExecThreadPool: IOmniThreadPool;
     function GetMaxParallelExecs: Integer;
     procedure SetMaxParallelExecs(const Value: Integer);
+{$ENDIF}
 
     procedure DoExecScript(
       const AFileName: string;
@@ -51,7 +55,9 @@ type
     property ThreadSqlStatementExecutor: ISqlStatementExecutor read GetThreadSqlStatementExecutor;
   protected
     procedure ExecScript(const AFileName: string);
+{$IF defined(MSWINDOWS)}
     property MaxParallelExecs: Integer read GetMaxParallelExecs write SetMaxParallelExecs;
+{$ENDIF}
   public
     constructor Create(const AExecutorFactory: ISqlStatementExecutorFactory; const ALogger: ILogger);
     destructor Destroy; override;
@@ -67,7 +73,9 @@ uses
   Variants,
   IOUtils,
   Parser,
+{$IF defined(MSWINDOWS)}
   ParallelUtils,
+{$ENDIF}
   Generics.Collections,
   Types;
 
@@ -91,6 +99,7 @@ begin
   FExecutorFactory:= AExecutorFactory;
   FLogger:= ALogger;
 
+{$IF defined(MSWINDOWS)}
   FParseThreadPool:= CreateThreadPool('SQL Scriptor Parse Thread Pool');
   FParseThreadPool.IdleWorkerThreadTimeout_sec:= 60;
   FParseThreadPool.MaxExecuting:= 50;
@@ -99,6 +108,7 @@ begin
   FExecThreadPool.SetThreadDataFactory(FExecutorFactory.ThreadDataFactoryMethod);
   FExecThreadPool.IdleWorkerThreadTimeout_sec:= 60;
   FExecThreadPool.MaxExecuting:= DefaultMaxParallelExecs;
+{$ENDIF}
 
   FGlobalVariables:= TVariables.Create;
 end;
@@ -115,10 +125,12 @@ procedure TSqlScriptor.DoExecScript(
   const AFilePositionHistory: IImmutableStack<IFilePosition>);
 
 var
+{$IF defined(MSWINDOWS)}
   TaskGroup: IOmniTaskGroup;
+  IsParallel: Boolean;
+{$ENDIF}
   VariablesSet: IVariablesSet;
   QueryParamsEnabled: Boolean;
-  IsParallel: Boolean;
   Term: string;
   LabelBoundVariableName: string;
   SkipToLabel: string;
@@ -140,9 +152,12 @@ var
   end;
 
   procedure ProcessSqlStatement(const ASqlStatement: string; const AFilePositionHistory: IImmutableStack<IFilePosition>);
+{$IF defined(MSWINDOWS)}
   var
     Task: IOmniTaskControl;
+{$ENDIF}
   begin
+{$IF defined(MSWINDOWS)}
     if IsParallel then
       begin
         Task:=
@@ -160,13 +175,12 @@ var
         Task.Schedule(FExecThreadPool);
       end
     else
-      begin
-        ThreadSqlStatementExecutor.ExecStatement(
-          ASqlStatement,
-          VariablesSet,
-          QueryParamsEnabled,
-          AFilePositionHistory);
-      end;
+{$ENDIF}
+    ThreadSqlStatementExecutor.ExecStatement(
+      ASqlStatement,
+      VariablesSet,
+      QueryParamsEnabled,
+      AFilePositionHistory);
   end;
 
   procedure ProcessInclude(
@@ -192,12 +206,8 @@ var
     TArray.Sort<string>(FileNames);
 
     for NewFileName in FileNames do
-      if not IsParallel then
-        DoExecScript(
-          NewFileName,
-          AParamValues,
-          AFilePositionHistory)
-      else
+{$IF defined(MSWINDOWS)}
+      if IsParallel then
         CreateTask(
           procedure (const task: IOmniTask)
           begin
@@ -206,7 +216,13 @@ var
               AParamValues,
               AFilePositionHistory);
           end
-        ).Join(TaskGroup).Schedule(FParseThreadPool);
+        ).Join(TaskGroup).Schedule(FParseThreadPool)
+      else
+{$ENDIF}
+        DoExecScript(
+          NewFileName,
+          AParamValues,
+          AFilePositionHistory);
   end;
 
   procedure ProcessLine(const ALineText: string; const ALineNo: Integer);
@@ -269,6 +285,7 @@ var
           QueryParamsEnabled:=
             MatchText(LineCommandParams[0], STrueTexts);
 
+{$IF defined(MSWINDOWS)}
       ltParallel:
         if (Length(LineCommandParams) > 0) then
           begin
@@ -285,6 +302,7 @@ var
             StrToIntDef(
               VariablesSet.EvaluateVariables(LineCommandParams[0]),
               DefaultMaxParallelExecs);
+{$ENDIF}
 
       ltTerm:
         if (Length(LineCommandParams) > 0) then
@@ -343,7 +361,9 @@ var
   CurrentLineNo: Integer;
   CurrentLineText: string;
 begin
+{$IF defined(MSWINDOWS)}
   IsParallel:= False;
+{$ENDIF}
   QueryParamsEnabled:= False;
   Term:= DefaultTerm;
   SkipToLabel:= '';
@@ -354,7 +374,9 @@ begin
     VariablesSet:= TVariablesSet.Create(FGlobalVariables);
     VariablesSet.SetValuesFromScriptParams(AParamValues);
 
+{$IF defined(MSWINDOWS)}
     TaskGroup:= CreateTaskGroup;
+{$ENDIF}
     try
       sl:= TStringList.Create;
       try
@@ -364,14 +386,16 @@ begin
             Inc(CurrentLineNo);
             ProcessLine(CurrentLineText, CurrentLineNo);
           end;
-
+  
         Inc(CurrentLineNo);
         ProcessLine(SCommandRow, CurrentLineNo);  // za da izpulni statementa na kraia na fiala bez da iska terminator
       finally
         FreeAndNil(sl);
       end;
     finally
+{$IF defined(MSWINDOWS)}
       WaitForAllTasks(TaskGroup);
+{$ENDIF}
     end;
   except
     on e: Exception do
@@ -391,11 +415,6 @@ begin
   DoExecScript(AFileName, nil, TImmutableStack<IFilePosition>.Create);
 end;
 
-function TSqlScriptor.GetMaxParallelExecs: Integer;
-begin
-  Result:= FExecThreadPool.MaxExecuting;
-end;
-
 function TSqlScriptor.GetThreadSqlStatementExecutor: ISqlStatementExecutor;
 begin
   if not Assigned(FThreadSqlStatementExecutor) then
@@ -404,9 +423,16 @@ begin
   Result:= FThreadSqlStatementExecutor;
 end;
 
+{$IF defined(MSWINDOWS)}
+function TSqlScriptor.GetMaxParallelExecs: Integer;
+begin
+  Result:= FExecThreadPool.MaxExecuting;
+end;
+
 procedure TSqlScriptor.SetMaxParallelExecs(const Value: Integer);
 begin
   FExecThreadPool.MaxExecuting:= Value;
 end;
+{$ENDIF}
 
 end.

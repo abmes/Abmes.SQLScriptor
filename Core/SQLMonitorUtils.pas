@@ -10,7 +10,7 @@ function CreateSQLMonitor(ASQLConnection: TSQLConnection): TSQLMonitor;
 implementation
 
 uses
-  SysUtils, Utils;
+  SysUtils, Utils, Winapi.TlHelp32, Winapi.Windows;
 
 var
   DBMonitorIsRinning: Boolean;
@@ -30,6 +30,31 @@ begin
         raise;
       end;
     end;
+end;
+
+function RunningProcessCount(const AExeFileName: string): Integer;
+var
+  SnapshotHandle: THandle;
+  ProcessEntry: tagPROCESSENTRY32;
+  ProcessFound: Boolean;
+begin
+  Result:= 0;
+
+  SnapshotHandle:= CreateToolhelp32Snapshot(TH32CS_SNAPPROCESS, 0);
+  try
+    ProcessEntry.dwSize:= SizeOf(ProcessEntry);
+
+    ProcessFound:= Process32First(SnapshotHandle, ProcessEntry);
+    while ProcessFound do
+      begin
+        if (AnsiCompareText(ProcessEntry.szExeFile, AExeFileName) = 0) then
+          Inc(Result);
+
+        ProcessFound:= Process32Next(SnapshotHandle, ProcessEntry);
+      end;  { while }
+  finally
+    CloseHandle(SnapshotHandle);
+  end;  { try }
 end;
 
 initialization

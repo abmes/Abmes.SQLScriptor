@@ -26,10 +26,6 @@ function SplitString(const AValue: string; const ADelimiterChar: Char = ' '; con
 
 function ReadFileToBytes(const AFileName: string): TBytes;
 
-function RunningProcessCount(const AExeFileName: string): Integer;
-
-function TempPath: string;
-
 function HttpGetString(const AUrl: string; const AAccept: string = ''): string;
 function HttpDownload(const AUrl, AFileName: string): string;
 
@@ -41,7 +37,9 @@ function VarToInt(const V: Variant): Integer;
 
 function EnvVarOrValue(const AValue: string): string;
 
+{$IF defined(MSWINDOWS)}
 function GetExeVersion: string;
+{$ENDIF}
 
 function GetLogFileName(const AScriptFileName, ADBName, ALogFolderName: string; const ADateTime: TDateTime): string;
 
@@ -54,7 +52,10 @@ resourcestring
 implementation
 
 uses
-  System.Types, System.StrUtils, Winapi.TlHelp32, Winapi.Windows,
+  System.Types, System.StrUtils,
+{$IF defined(MSWINDOWS)}
+  Winapi.Windows,
+{$ENDIF}
   System.Net.URLClient, System.Net.HttpClient, System.IOUtils;
 
 const
@@ -175,31 +176,6 @@ begin
   end;  { try }
 end;
 
-function RunningProcessCount(const AExeFileName: string): Integer;
-var
-  SnapshotHandle: THandle;
-  ProcessEntry: tagPROCESSENTRY32;
-  ProcessFound: Boolean;
-begin
-  Result:= 0;
-
-  SnapshotHandle:= CreateToolhelp32Snapshot(TH32CS_SNAPPROCESS, 0);
-  try
-    ProcessEntry.dwSize:= SizeOf(ProcessEntry);
-
-    ProcessFound:= Process32First(SnapshotHandle, ProcessEntry);
-    while ProcessFound do
-      begin
-        if (AnsiCompareText(ProcessEntry.szExeFile, AExeFileName) = 0) then
-          Inc(Result);
-
-        ProcessFound:= Process32Next(SnapshotHandle, ProcessEntry);
-      end;  { while }
-  finally
-    CloseHandle(SnapshotHandle);
-  end;  { try }
-end;
-
 function SplitString(const AValue: string; const ADelimiterChar: Char = ' '; const AQuoteChar: Char = '"'): TArray<string>;
 
   function CountChars(const AString: string; const AChar: Char): Integer;
@@ -244,15 +220,6 @@ begin
   finally
     FreeAndNil(SL);
   end;
-end;
-
-function TempPath: string;
-var
-	i: Integer;
-begin
-  SetLength(Result, MAX_PATH);
-	i:= GetTempPath(Length(Result), PChar(Result));
-	SetLength(Result, i);
 end;
 
 function HttpGetString(const AUrl: string; const AAccept: string = ''): string;
@@ -421,6 +388,7 @@ begin
     Result:= AValue;
 end;
 
+{$IF defined(MSWINDOWS)}
 function GetExeVersion: string;
 var
   FileName: string;
@@ -447,6 +415,7 @@ begin
       end;  { try }
     end;  { if }
 end;
+{$ENDIF}
 
 function GetLogFileName(const AScriptFileName, ADBName, ALogFolderName: string; const ADateTime: TDateTime): string;
 

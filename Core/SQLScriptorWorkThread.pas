@@ -183,7 +183,7 @@ begin
             Ext:= 'sql';
 
           DownloadedScriptFileName:= 'SQLScriptorScript-' + FormatDateTime('yyyymmdd-hhnnss', FLogDateTime) + '.' + ext;
-          DownloadedScriptFileName:= TPath.Combine(TempPath, DownloadedScriptFileName);
+          DownloadedScriptFileName:= TPath.Combine(TPath.GetTempPath, DownloadedScriptFileName);
 
           FScriptFileName:= HttpDownload(FScriptFileName, DownloadedScriptFileName);
         end;
@@ -321,7 +321,7 @@ function TSQLScriptorWorkThread.PersistScript(
   const
     SScriptTempDirName = 'SqlScriptTemp';
   begin
-    Result:= TPath.Combine(TempPath, SScriptTempDirName);
+    Result:= TPath.Combine(TPath.GetTempPath, SScriptTempDirName);
   end;
 
 var

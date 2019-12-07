@@ -11,7 +11,6 @@ uses
   SimpleDictionaries in 'Utils\SimpleDictionaries.pas',
   ImmutableStack in 'Utils\ImmutableStack.pas',
   ArrayUtils in 'Utils\ArrayUtils.pas',
-  ParallelUtils in 'Utils\ParallelUtils.pas',
   SQLScriptorWorkThread in 'Core\SQLScriptorWorkThread.pas',
   ProgressLogger in 'Core\ProgressLogger.pas',
   Logger in 'Core\Logger.pas',
@@ -20,7 +19,10 @@ uses
   Variables in 'Core\Variables.pas',
   StatementExecutor in 'Core\StatementExecutor.pas',
   Parser in 'Core\Parser.pas',
+{$IF defined(MSWINDOWS)}
   SQLMonitorUtils in 'Core\SQLMonitorUtils.pas',
+  ParallelUtils in 'Utils\ParallelUtils.pas',
+{$ENDIF }
   SQLConnectionInitializer in 'Core\SQLConnectionInitializer.pas',
   OracleSQLConnectionInitializer in 'Oracle\OracleSQLConnectionInitializer.pas',
   ConfigOracleConnectionParamsProvider in 'Oracle\ConfigOracleConnectionParamsProvider.pas',
@@ -61,7 +63,11 @@ begin
       TSQLScriptorLauncher.Run(EnvVarOrValue(ScriptFileName), LogFolderName, EnvVarOrValue(ConfigLocation), EnvVarOrValue(FilterDBNames), ExecuteScript)
     else
       begin
+{$IF defined(MSWINDOWS)}
         Writeln(SAppSignature + ' ' + GetExeVersion);
+{$ELSE}
+        Writeln(SAppSignature);
+{$ENDIF}
         Writeln('');
         Writeln('Switches:');
         Writeln('  /script [ScriptFileName|EnvVarForScriptFileName]');

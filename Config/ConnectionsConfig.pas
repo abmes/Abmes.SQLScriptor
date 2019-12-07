@@ -50,7 +50,7 @@ type
 implementation
 
 uses
-  REST.Json, SysUtils, System.IOUtils, System.Win.Registry, Winapi.Windows,
+  REST.Json, SysUtils, System.IOUtils,
   System.Classes;
 
 { TConfig }
