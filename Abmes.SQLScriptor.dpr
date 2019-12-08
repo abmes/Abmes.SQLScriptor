@@ -66,15 +66,15 @@ begin
 {$IF defined(MSWINDOWS)}
         Writeln(SAppSignature + ' ' + GetExeVersion);
 {$ELSE}
-        Writeln(SAppSignature);
+        Writeln(SAppSignature + 'for Linux');
 {$ENDIF}
         Writeln('');
         Writeln('Switches:');
         Writeln('  /script [ScriptFileName|EnvVarForScriptFileName]');
         Writeln('  /logdir [LogsDirName]');
         Writeln('  /config [FileOrHttpConfigLocation|EnvVarForFileOrHttpConfigLocation]');
-        Writeln('  /databases [CommaSeparatedFilterDBNames]');
-        Writeln('  /versionsonly');
+        Writeln('  /databases [CommaSeparatedFilterDBNames] (optional)');
+        Writeln('  /versionsonly (optional)');
         Writeln('');
       end;
   except
