@@ -5,7 +5,7 @@
 *.dsk
 __history
 __recovery
-Win32
+bin
 /Docker/bin/Abmes.SQLScriptor.exe
 /Docker/bin
 /Abmes.SQLScriptor.res
