@@ -1,7 +1,11 @@
-$logDir = "C:\Logs\SQLScriptor"
+$logDir = Join-Path ([System.IO.Path]::GetTempPath()) "SQLScriptorLogs"
 
+Import-Module AWSPowerShell.NetCore
 
-.\Abmes.SQLScriptor.exe /logdir $logDir /config "SQLSCRIPTOR_CONFIG_LOCATION" /script "SQLSCRIPTOR_SCRIPT_LOCATION" /databases "SQLSCRIPTOR_DATABASES" /versionsonly "SQLSCRIPTOR_VERSIONSONLY"
+if ($IsWindows) { Set-Alias sqlscriptor .\Abmes.SQLScriptor.exe }
+if ($IsLinux)   { Set-Alias sqlscriptor .\sqlscriptor }
+
+sqlscriptor -logdir $logDir -config "SQLSCRIPTOR_CONFIG_LOCATION" -script "SQLSCRIPTOR_SCRIPT_LOCATION" -databases "SQLSCRIPTOR_DATABASES" -versionsonly "SQLSCRIPTOR_VERSIONSONLY"
 
 
 $s3LogsBucketName = $env:AWS_S3_LOGS_BUCKET_NAME
@@ -19,7 +23,7 @@ if ($s3LogsBucketName)
     
     foreach ($logFile in $logFiles)
     {
-        $key = $logFile.FullName.Substring($logDir.Length + 1).Replace("\", "/")
+        $key = $logFile.FullName.Substring($logDir.Length).TrimStart([System.IO.Path]::DirectorySeparatorChar).Replace([System.IO.Path]::DirectorySeparatorChar, "/")
 
         Write-Host $key
 

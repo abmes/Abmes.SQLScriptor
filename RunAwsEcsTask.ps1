@@ -1,4 +1,5 @@
 Param(
+  [Parameter(Mandatory=$true)]  [ValidateSet("Lambda", "Ecs")] [string] $ServiceType,
   [Parameter(Mandatory=$true)]  [string] $ContainerName,
   [Parameter(Mandatory=$true)]  [string] $ClusterName,
   [Parameter(Mandatory=$true)]  [string] $ConfigLocation,

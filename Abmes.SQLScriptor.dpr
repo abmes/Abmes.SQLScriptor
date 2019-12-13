@@ -19,10 +19,12 @@ uses
   Variables in 'Core\Variables.pas',
   StatementExecutor in 'Core\StatementExecutor.pas',
   Parser in 'Core\Parser.pas',
-{$IF defined(MSWINDOWS)}
+  {$IF defined(MSWINDOWS)}
   SQLMonitorUtils in 'Core\SQLMonitorUtils.pas',
+  {$ENDIF }
+  {$IF defined(MSWINDOWS)}
   ParallelUtils in 'Utils\ParallelUtils.pas',
-{$ENDIF }
+  {$ENDIF }
   SQLConnectionInitializer in 'Core\SQLConnectionInitializer.pas',
   OracleSQLConnectionInitializer in 'Oracle\OracleSQLConnectionInitializer.pas',
   ConfigOracleConnectionParamsProvider in 'Oracle\ConfigOracleConnectionParamsProvider.pas',
