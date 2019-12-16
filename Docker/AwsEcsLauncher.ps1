@@ -1,3 +1,5 @@
+$ProgressPreference = "SilentlyContinue"
+
 $logDir = Join-Path ([System.IO.Path]::GetTempPath()) "SQLScriptorLogs"
 
 Import-Module AWSPowerShell.NetCore
@@ -27,7 +29,9 @@ if ($s3LogsBucketName)
 
         Write-Host $key
 
-        Write-S3Object -BucketName $s3LogsBucketName -Key $key -File $logFile.FullName -ContentType "text/plain" -Region $awsRegion
+        Write-S3Object -BucketName $s3LogsBucketName -Key $key -File $logFile.FullName -ContentType "text/plain" -Region $awsRegion | Out-Null
+        
+        Start-Sleep -Seconds 1
     }
 
     Write-Host " "
