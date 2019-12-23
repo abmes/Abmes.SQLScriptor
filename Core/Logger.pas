@@ -62,6 +62,16 @@ type
   end;
 
 type
+  TConsoleLogger = class(TBaseLogger)
+  strict private
+    FDbName: string;
+  strict protected
+    procedure DoLog(const AText: string); override;
+  public
+    constructor Create(const ADbName: string);
+  end;
+
+type
   TParseLogger = class(TBaseLogger)
   strict private
     FLog: string;
@@ -231,6 +241,19 @@ end;
 procedure TParseLogger.DoLog(const AText: string);
 begin
   FLog:= ConcatLines(FLog, AText);
+end;
+
+{ TConsoleLogger }
+
+constructor TConsoleLogger.Create(const ADbName: string);
+begin
+  inherited Create;
+  FDbName:= ADbNAme;
+end;
+
+procedure TConsoleLogger.DoLog(const AText: string);
+begin
+  WriteLn('[', FDbName, '] ', AText);
 end;
 
 end.

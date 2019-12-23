@@ -425,14 +425,17 @@ function GetLogFileName(const AScriptFileName, ADBName, ALogFolderName: string; 
   end;
 
 begin
-  Result:=
-    TPath.Combine(
-      GetDBLogFolder(ADBName, ALogFolderName),
-      Format(
-        '%s_%s_%s.log',
-        [ TPath.GetFileNameWithoutExtension(AScriptFileName),
-          ADBName,
-          FormatDateTime('yyyy-mm-dd_hh-nn-ss', ADateTime)]));
+  if SameText(ALogFolderName, 'console') then
+    Result:= ALogFolderName
+  else
+    Result:=
+      TPath.Combine(
+        GetDBLogFolder(ADBName, ALogFolderName),
+        Format(
+          '%s_%s_%s.log',
+          [ TPath.GetFileNameWithoutExtension(AScriptFileName),
+            ADBName,
+            FormatDateTime('yyyy-mm-dd_hh-nn-ss', ADateTime)]));
 end;
 
 end.

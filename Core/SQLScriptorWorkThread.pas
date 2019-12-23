@@ -123,7 +123,10 @@ var
   SQLScriptor: ISQLScriptor;
   Logger: ILogger;
 begin
-  Logger:= TFileLogger.Create(ALogFileName);
+  if (ALogFileName = 'console') then
+    Logger:= TConsoleLogger.Create(ADBName)
+  else
+    Logger:= TFileLogger.Create(ALogFileName);
 
   SQLScriptor:= TSqlScriptor.Create(TDBXSqlStatementExecutorFactory.Create(ADBName, Logger, FSQLConnectionInitializer, FWarningErrorMessagesProvider), Logger);
   SQLScriptor.ExecScript(AScriptFileName);
