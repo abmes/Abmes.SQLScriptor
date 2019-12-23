@@ -4,8 +4,8 @@ $logDir = Join-Path ([System.IO.Path]::GetTempPath()) "SQLScriptorLogs"
 
 Import-Module AWSPowerShell.NetCore
 
-if ($IsWindows) { Set-Alias sqlscriptor .\Abmes.SQLScriptor.exe }
-if ($IsLinux)   { Set-Alias sqlscriptor .\sqlscriptor }
+if ($IsWindows) { Set-Alias sqlscriptor (Join-Path (Get-Location) Abmes.SQLScriptor.exe) }
+if ($IsLinux)   { Set-Alias sqlscriptor (Join-Path (Get-Location) sqlscriptor) }
 
 sqlscriptor -logdir $logDir -config "SQLSCRIPTOR_CONFIG_LOCATION" -script "SQLSCRIPTOR_SCRIPT_LOCATION" -databases "SQLSCRIPTOR_DATABASES" -versionsonly "SQLSCRIPTOR_VERSIONSONLY"
 
