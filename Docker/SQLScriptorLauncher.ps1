@@ -1,13 +1,13 @@
 $ProgressPreference = "SilentlyContinue"
 
-$logDir = Join-Path ([System.IO.Path]::GetTempPath()) "SQLScriptorLogs"
+$logDir = Join-Path (Join-Path ([System.IO.Path]::GetTempPath()) "SQLScriptorLogs") ([System.Guid]::NewGuid().ToString())
 
 Import-Module AWSPowerShell.NetCore
 
 if ($IsWindows) { Set-Alias sqlscriptor (Join-Path (Get-Location) Abmes.SQLScriptor.exe) }
 if ($IsLinux)   { Set-Alias sqlscriptor (Join-Path (Get-Location) sqlscriptor) }
 
-sqlscriptor -logdir $logDir -config "SQLSCRIPTOR_CONFIG_LOCATION" -script "SQLSCRIPTOR_SCRIPT_LOCATION" -databases "SQLSCRIPTOR_DATABASES" -versionsonly "SQLSCRIPTOR_VERSIONSONLY"
+sqlscriptor -logdir $logDir -config "SQLSCRIPTOR_CONFIG_LOCATION" -script "SQLSCRIPTOR_SCRIPT_LOCATION" -databases "SQLSCRIPTOR_DATABASES" -versionsonly "SQLSCRIPTOR_VERSIONSONLY" | % { Write-Output $_ }
 
 $s3LogsBucketName = $env:AWS_S3_LOGS_BUCKET_NAME
 
