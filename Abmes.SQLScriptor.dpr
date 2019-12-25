@@ -59,10 +59,10 @@ begin
       not FindCmdLineSwitch('versionsonly') or
       (EnvVarOrValue(VersionsOnly) = '0');
 
-    if FindCmdLineSwitch('script', ScriptFileName) and
-       FindCmdLineSwitch('logdir', LogFolderName) and
-       FindCmdLineSwitch('config', ConfigLocation) then
-      TSQLScriptorLauncher.Run(EnvVarOrValue(ScriptFileName), LogFolderName, EnvVarOrValue(ConfigLocation), EnvVarOrValue(FilterDBNames), ExecuteScript)
+    if FindSwitchOrEnvValue('script', ScriptFileName) and
+       FindSwitchOrEnvValue('logdir', LogFolderName) and
+       FindSwitchOrEnvValue('config', ConfigLocation) then
+      TSQLScriptorLauncher.Run(ScriptFileName, LogFolderName, ConfigLocation, FilterDBNames, ExecuteScript)
     else
       begin
 {$IF defined(MSWINDOWS)}

@@ -36,6 +36,7 @@ function GetHeaderlessURL(const AValue: string): string;
 function VarToInt(const V: Variant): Integer;
 
 function EnvVarOrValue(const AValue: string): string;
+function FindSwitchOrEnvValue(const ASwitchName: string; var AValue: string): Boolean;
 
 {$IF defined(MSWINDOWS)}
 function GetExeVersion: string;
@@ -386,6 +387,16 @@ begin
 
   if (Result = '') then
     Result:= AValue;
+end;
+
+function FindSwitchOrEnvValue(const ASwitchName: string; var AValue: string): Boolean;
+begin
+  if not FindCmdLineSwitch(ASwitchName, AValue) or (AValue = '') then
+    Exit(False);
+
+  AValue:= EnvVarOrValue(AValue);
+
+  Result:= (AValue <> '');
 end;
 
 {$IF defined(MSWINDOWS)}

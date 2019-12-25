@@ -53,7 +53,7 @@ Set-Location $PSScriptRoot/docker
 
 New-Item -Path bin -ItemType Directory -ErrorAction SilentlyContinue | Out-Null
 
-Copy-Item .\AwsEcsLauncher.ps1 -Destination .\bin -Force
+Copy-Item .\SQLScriptorLauncher.ps1 -Destination .\bin -Force
 Copy-Item .\$TargetOS\Dockerfile -Destination .
 
 if ($TargetOS -eq "Windows")
