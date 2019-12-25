@@ -53,6 +53,7 @@ begin
   LProgressLogger.LogProgress(SAppSignature);
   LProgressLogger.LogProgress('');
   LProgressLogger.LogProgress('Config location: ' + GetHeaderlessURL(AConfigLocation));
+  LProgressLogger.LogProgress('Databases filter: ' + AFilterDBNames);
 
   LConnectionsConfig:= TConnectionsConfigLoader.Load(AConfigLocation);
   try

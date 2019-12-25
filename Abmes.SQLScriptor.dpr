@@ -51,7 +51,7 @@ var
 
 begin
   try
-    if not FindCmdLineSwitch('databases', FilterDBNames) then
+    if not FindSwitchOrEnvValue('databases', FilterDBNames) then
       FilterDBNames:= '';
 
     FindCmdLineSwitch('versionsonly', VersionsOnly);
