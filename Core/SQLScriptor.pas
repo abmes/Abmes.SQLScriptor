@@ -192,14 +192,19 @@ var
     IncludeFileDir: string;
     NewFileName: string;
     FileNames: TStringDynArray;
+    parts: TStringDynArray;
   begin
     IncludeFileMask:= '';
     IncludeFileDir:= '';
 
     if (Length(AIncludeMask) > 0)then
       begin
-        IncludeFileMask:= TPath.GetFileName(AIncludeMask);
-        IncludeFileDir:= TPath.GetDirectoryName(AIncludeMask);
+        parts:= SplitString(AIncludeMask, '\');
+
+        IncludeFileMask:= parts[Length(parts) - 1];
+
+        IncludeFileDir:= LeftStr(AIncludeMask, Length(AIncludeMask) - Length(IncludeFileMask) - 1);
+        IncludeFileDir:= IncludeFileDir.Replace('\', TPath.DirectorySeparatorChar);
       end;
 
     FileNames:= TDirectory.GetFiles(IncludeFileDir, IncludeFileMask);
@@ -275,7 +280,7 @@ var
               ParamValues[i-1]:= VariablesSet.EvaluateVariablesFunc()(LineCommandParams[i]);
 
             ProcessInclude(
-              TPath.Combine(TPath.GetDirectoryName(AFileName), LineCommandParams[0]).Replace('\', TPath.DirectorySeparatorChar),
+              TPath.Combine(TPath.GetDirectoryName(AFileName), LineCommandParams[0]),
               ParamValues,
               CreateFilePositionHistory(ALineNo));
           end;
