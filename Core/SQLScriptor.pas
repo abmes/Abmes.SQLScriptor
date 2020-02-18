@@ -200,7 +200,7 @@ var
 
     if (Length(AIncludeMask) > 0)then
       begin
-        parts:= SplitString(AIncludeMask, '\');
+        parts:= AIncludeMask.Split(['\', '/']);
 
         IncludeFileMask:= parts[Length(parts) - 1];
 
