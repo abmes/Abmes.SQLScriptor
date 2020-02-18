@@ -7,6 +7,7 @@ uses
   OtlTask,
   OtlTaskControl,
   OtlThreadPool,
+  Winapi.Windows,
 {$ENDIF}
   Utils,
   Variables,
@@ -206,6 +207,11 @@ var
         IncludeFileDir:= LeftStr(AIncludeMask, Length(AIncludeMask) - Length(IncludeFileMask) - 1);
         IncludeFileDir:= IncludeFileDir.Replace('\', TPath.DirectorySeparatorChar);
       end;
+
+    if (IncludeFileDir = '') then
+      IncludeFileDir:= TDirectory.GetCurrentDirectory
+    else
+      IncludeFileDir:= ExpandFileName(IncludeTrailingPathDelimiter(IncludeFileDir));
 
     FileNames:= TDirectory.GetFiles(IncludeFileDir, IncludeFileMask);
     TArray.Sort<string>(FileNames);
