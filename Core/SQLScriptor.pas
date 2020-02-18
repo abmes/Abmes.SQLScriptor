@@ -275,7 +275,7 @@ var
               ParamValues[i-1]:= VariablesSet.EvaluateVariablesFunc()(LineCommandParams[i]);
 
             ProcessInclude(
-              TPath.Combine(TPath.GetDirectoryName(AFileName), LineCommandParams[0]),
+              TPath.Combine(TPath.GetDirectoryName(AFileName), LineCommandParams[0]).Replace('\', TPath.DirectorySeparatorChar),
               ParamValues,
               CreateFilePositionHistory(ALineNo));
           end;
