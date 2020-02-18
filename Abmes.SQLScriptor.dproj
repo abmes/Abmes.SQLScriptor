@@ -6,9 +6,11 @@
         <MainSource>Abmes.SQLScriptor.dpr</MainSource>
         <Base>True</Base>
         <Config Condition="'$(Config)'==''">Release</Config>
-        <Platform Condition="'$(Platform)'==''">Win64</Platform>
+        <Platform Condition="'$(Platform)'==''">Linux64</Platform>
         <TargetedPlatforms>131</TargetedPlatforms>
         <AppType>Console</AppType>
+        <Profile Condition="'$(Platform)'=='Linux64'">Ubuntu 18.04</Profile>
+        <PlatformSDK Condition="'$(Platform)'=='Linux64'">ubuntu18.04.sdk</PlatformSDK>
     </PropertyGroup>
     <PropertyGroup Condition="'$(Config)'=='Base' or '$(Base)'!=''">
         <Base>true</Base>
@@ -45,6 +47,12 @@
         <Cfg_1>true</Cfg_1>
         <Base>true</Base>
     </PropertyGroup>
+    <PropertyGroup Condition="('$(Platform)'=='Win64' and '$(Cfg_1)'=='true') or '$(Cfg_1_Win64)'!=''">
+        <Cfg_1_Win64>true</Cfg_1_Win64>
+        <CfgParent>Cfg_1</CfgParent>
+        <Cfg_1>true</Cfg_1>
+        <Base>true</Base>
+    </PropertyGroup>
     <PropertyGroup Condition="'$(Config)'=='Release' or '$(Cfg_2)'!=''">
         <Cfg_2>true</Cfg_2>
         <CfgParent>Base</CfgParent>
@@ -58,6 +66,12 @@
     </PropertyGroup>
     <PropertyGroup Condition="('$(Platform)'=='Win32' and '$(Cfg_2)'=='true') or '$(Cfg_2_Win32)'!=''">
         <Cfg_2_Win32>true</Cfg_2_Win32>
+        <CfgParent>Cfg_2</CfgParent>
+        <Cfg_2>true</Cfg_2>
+        <Base>true</Base>
+    </PropertyGroup>
+    <PropertyGroup Condition="('$(Platform)'=='Win64' and '$(Cfg_2)'=='true') or '$(Cfg_2_Win64)'!=''">
+        <Cfg_2_Win64>true</Cfg_2_Win64>
         <CfgParent>Cfg_2</CfgParent>
         <Cfg_2>true</Cfg_2>
         <Base>true</Base>
@@ -104,6 +118,10 @@
     </PropertyGroup>
     <PropertyGroup Condition="'$(Cfg_1_Win32)'!=''">
         <DCC_RemoteDebug>false</DCC_RemoteDebug>
+        <Debugger_RunParams>-config &quot;d:\test\config.cfg&quot; -script &quot;http://some&quot; -databases &quot;SQLSCRIPTOR_DATABASES&quot; -versionsonly &quot;SQLSCRIPTOR_VERSIONSONLY&quot; -logdir .</Debugger_RunParams>
+    </PropertyGroup>
+    <PropertyGroup Condition="'$(Cfg_1_Win64)'!=''">
+        <Debugger_RunParams>-config &quot;SQLSCRIPTOR_CONFIG_LOCATION&quot; -script &quot;SQLSCRIPTOR_SCRIPT_LOCATION&quot; -databases &quot;SQLSCRIPTOR_DATABASES&quot; -versionsonly &quot;SQLSCRIPTOR_VERSIONSONLY&quot; -logdir .</Debugger_RunParams>
     </PropertyGroup>
     <PropertyGroup Condition="'$(Cfg_2)'!=''">
         <DCC_LocalDebugSymbols>false</DCC_LocalDebugSymbols>
@@ -115,18 +133,30 @@
         <Debugger_Launcher>/usr/bin/xterm -e &quot;%debuggee%&quot;</Debugger_Launcher>
         <Manifest_File>(None)</Manifest_File>
         <VerInfo_MinorVer>1</VerInfo_MinorVer>
-        <VerInfo_Keys>CFBundleVersion=4.1.52</VerInfo_Keys>
+        <VerInfo_Keys>CFBundleVersion=4.1.53</VerInfo_Keys>
         <VerInfo_MajorVer>4</VerInfo_MajorVer>
-        <VerInfo_Build>52</VerInfo_Build>
+        <VerInfo_Build>53</VerInfo_Build>
+        <Debugger_RunParams>-logdir . -config &quot;SQLSCRIPTOR_CONFIG_LOCATION&quot; -script &quot;SQLSCRIPTOR_SCRIPT_LOCATION&quot; -databases &quot;SQLSCRIPTOR_DATABASES&quot; -versionsonly &quot;SQLSCRIPTOR_VERSIONSONLY&quot;</Debugger_RunParams>
     </PropertyGroup>
     <PropertyGroup Condition="'$(Cfg_2_Win32)'!=''">
         <VerInfo_IncludeVerInfo>true</VerInfo_IncludeVerInfo>
         <VerInfo_Locale>1033</VerInfo_Locale>
         <VerInfo_MajorVer>4</VerInfo_MajorVer>
-        <VerInfo_Build>52</VerInfo_Build>
-        <VerInfo_Keys>CompanyName=Abmes;FileDescription=SQL scripting utility;FileVersion=4.1.0.52;InternalName=;LegalCopyright=Abmes 2018;LegalTrademarks=;OriginalFilename=;ProductName=SQL Scriptor;ProductVersion=4.0.3.49;Comments=;ProgramID=com.embarcadero.$(MSBuildProjectName)</VerInfo_Keys>
+        <VerInfo_Build>53</VerInfo_Build>
+        <VerInfo_Keys>CompanyName=Abmes;FileDescription=SQL scripting utility;FileVersion=4.1.0.53;InternalName=;LegalCopyright=Abmes 2018;LegalTrademarks=;OriginalFilename=;ProductName=SQL Scriptor;ProductVersion=4.0.3.49;Comments=;ProgramID=com.embarcadero.$(MSBuildProjectName)</VerInfo_Keys>
         <Manifest_File>None</Manifest_File>
         <VerInfo_MinorVer>1</VerInfo_MinorVer>
+        <Debugger_RunParams>-config &quot;https://alvecta-vector-config.s3.eu-central-1.amazonaws.com/Services/ServiceLocalDevConfig.json[Referer=aAyuioFGkJKL4567DFJKert32ertfd678]&quot; -script &quot;https://alvecta-vector-dbscripts.s3.eu-central-1.amazonaws.com/18.0.1082/Script.zip[Referer=YUKmKJffdMikii798543cfcflKkMkFtCgl45609876fRertIOPdf]&quot; -databases &quot;dev-balar2&quot; -versionsonly &quot;1&quot; -logdir .</Debugger_RunParams>
+    </PropertyGroup>
+    <PropertyGroup Condition="'$(Cfg_2_Win64)'!=''">
+        <Debugger_RunParams>-config &quot;SQLSCRIPTOR_CONFIG_LOCATION&quot; -script &quot;SQLSCRIPTOR_SCRIPT_LOCATION&quot; -databases &quot;SQLSCRIPTOR_DATABASES&quot; -versionsonly &quot;SQLSCRIPTOR_VERSIONSONLY&quot; -logdir .</Debugger_RunParams>
+        <VerInfo_Locale>1033</VerInfo_Locale>
+        <Manifest_File>(None)</Manifest_File>
+        <VerInfo_IncludeVerInfo>true</VerInfo_IncludeVerInfo>
+        <VerInfo_MajorVer>4</VerInfo_MajorVer>
+        <VerInfo_MinorVer>1</VerInfo_MinorVer>
+        <VerInfo_Build>53</VerInfo_Build>
+        <VerInfo_Keys>CompanyName=;FileDescription=$(MSBuildProjectName);FileVersion=4.1.0.53;InternalName=;LegalCopyright=;LegalTrademarks=;OriginalFilename=;ProgramID=com.embarcadero.$(MSBuildProjectName);ProductName=$(MSBuildProjectName);ProductVersion=1.0.0.0;Comments=</VerInfo_Keys>
     </PropertyGroup>
     <ItemGroup>
         <DelphiCompile Include="$(MainSource)">
@@ -187,6 +217,12 @@
                 </Excluded_Packages>
             </Delphi.Personality>
             <Deployment Version="3">
+                <DeployFile LocalName="bin\Linux64\Release\Abmes.SQLScriptor" Configuration="Release" Class="ProjectOutput">
+                    <Platform Name="Linux64">
+                        <RemoteName>Abmes_SQLScriptor</RemoteName>
+                        <Overwrite>true</Overwrite>
+                    </Platform>
+                </DeployFile>
                 <DeployFile LocalName="$(BDS)\Redist\osx32\libcgunwind.1.0.dylib" Class="DependencyModule">
                     <Platform Name="OSX32">
                         <Overwrite>true</Overwrite>
@@ -200,12 +236,6 @@
                 </DeployFile>
                 <DeployFile LocalName="$(BDS)\Redist\iossimulator\libcgunwind.1.0.dylib" Class="DependencyModule">
                     <Platform Name="iOSSimulator">
-                        <Overwrite>true</Overwrite>
-                    </Platform>
-                </DeployFile>
-                <DeployFile LocalName="Linux64\Release\Abmes.SQLScriptor" Configuration="Release" Class="ProjectOutput">
-                    <Platform Name="Linux64">
-                        <RemoteName>Abmes_SQLScriptor</RemoteName>
                         <Overwrite>true</Overwrite>
                     </Platform>
                 </DeployFile>
@@ -695,7 +725,7 @@
                 <ProjectRoot Platform="iOSSimulator" Name="$(PROJECTNAME).app"/>
             </Deployment>
             <Platforms>
-                <Platform value="Linux64">True</Platform>
+                <Platform value="Linux64" Profile="Ubuntu 18.04" PlatformSDK="ubuntu18.04.sdk">True</Platform>
                 <Platform value="Win32">True</Platform>
                 <Platform value="Win64">True</Platform>
             </Platforms>
