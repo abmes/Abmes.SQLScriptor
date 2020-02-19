@@ -417,7 +417,7 @@ begin
         Now,
         0,
         FormatFilePositionHistory(CreateFilePositionHistory(CurrentLineNo)),
-        e.Message);
+        Format('%s (when processing %s)', [e.Message, AFileName]));
   end;
 end;
 
