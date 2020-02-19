@@ -101,11 +101,11 @@ begin
   FLogger:= ALogger;
 
 {$IF defined(MSWINDOWS)}
-  FParseThreadPool:= CreateThreadPool('SQL Scriptor Parse Thread Pool');
+  FParseThreadPool:= OtlThreadPool.CreateThreadPool('SQL Scriptor Parse Thread Pool');
   FParseThreadPool.IdleWorkerThreadTimeout_sec:= 60;
   FParseThreadPool.MaxExecuting:= 50;
 
-  FExecThreadPool:= CreateThreadPool('SQL Scriptor Exec Thread Pool');
+  FExecThreadPool:= OtlThreadPool.CreateThreadPool('SQL Scriptor Exec Thread Pool');
   FExecThreadPool.SetThreadDataFactory(FExecutorFactory.ThreadDataFactoryMethod);
   FExecThreadPool.IdleWorkerThreadTimeout_sec:= 60;
   FExecThreadPool.MaxExecuting:= DefaultMaxParallelExecs;
