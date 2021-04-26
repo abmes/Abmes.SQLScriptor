@@ -27,7 +27,7 @@ function SplitString(const AValue: string; const ADelimiterChar: Char = ' '; con
 function ReadFileToBytes(const AFileName: string): TBytes;
 
 function HttpGetString(const AUrl: string; const AAccept: string = ''): string;
-function HttpDownload(const AUrl, AFileName: string): string;
+procedure HttpDownload(const AUrl, AFileName: string);
 
 function IsURL(const AValue: string): Boolean;
 function GetURLFileExtension(const AValue: string): string;
@@ -57,7 +57,8 @@ uses
 {$IF defined(MSWINDOWS)}
   Winapi.Windows,
 {$ENDIF}
-  System.Net.URLClient, System.Net.HttpClient, System.IOUtils;
+  System.Net.URLClient, System.Net.HttpClient, System.IOUtils,
+  System.Generics.Collections;
 
 const
   SWebRequestUserAgentName = 'Abmes';
@@ -223,17 +224,11 @@ begin
   end;
 end;
 
-function HttpGetString(const AUrl: string; const AAccept: string = ''): string;
+procedure ExecuteHttp(const AUrl: string; const AProc: TProc<string, TArray<TPair<string, string>>>);
 var
-  http: TRESTHTTP;
-  ResponseStream: TStringStream;
-  HeadersString: string;
-  PureUrl: string;
   UrlParts: TArray<string>;
-  HeaderString: string;
-  p: Integer;
-  HeaderName: string;
-  HeaderValue: string;
+  PureUrl: string;
+  HeadersString: string;
 begin
   UrlParts:= SplitString(AUrl, '[');
 
@@ -248,103 +243,93 @@ begin
       HeadersString:= UrlParts[1].Trim([']']);
     end;
 
+  var Headers:= TList<TPair<string, string>>.Create(nil);
   try
-    ResponseStream:= TStringStream.Create;
-    try
-      http:= TRESTHTTP.Create;
-      try
-        if (AAccept <> '') then
-          http.Request.Accept:= AAccept;
+    if (HeadersString <> '') then
+       for var HeaderString in SplitString(HeadersString, ';') do
+         begin
+           var p:= Pos('=', HeaderString);
+           if (p <= 1) then
+             raise Exception.Create('Invalid header format: ' + HeaderString);
 
-        http.Request.AcceptCharSet:= 'UTF-8';
-        http.Request.UserAgent:= SWebRequestUserAgentName;
+           var HeaderName:= LeftStr(HeaderString, p-1);
+           var HeaderValue:= MidStr(HeaderString, p+1, Length(HeaderString)).Trim(['"']);
 
-        if (HeadersString <> '') then
-           for HeaderString in SplitString(HeadersString, ';') do
-             begin
-               p:= Pos('=', HeaderString);
-               if (p <= 1) then
-                 raise Exception.Create('Invalid header format: ' + HeaderString);
+           Headers.Add(TPair<string, string>.Create(HeaderName, HeaderValue));
+         end;
 
-               HeaderName:= LeftStr(HeaderString, p-1);
-               HeaderValue:= MidStr(HeaderString, p+1, Length(HeaderString)).Trim(['"']);
-
-               http.Request.CustomHeaders.Values[HeaderName]:= HeaderValue;
-             end;
-
-        http.Get(PureUrl, ResponseStream);
-
-        Result:= ResponseStream.DataString;
-      finally
-        FreeAndNil(http);
-      end;
-    finally
-      ResponseStream.Free;
-    end;
-  except
-    on E: EHTTPProtocolException do
-      raise Exception.Create(E.Message + SLineBreak + E.ErrorMessage);
+    AProc(PureUrl, Headers.ToArray());
+  finally
+    Headers.Free;
   end;
 end;
 
-function HttpDownload(const AUrl, AFileName: string): string;
+function HttpGetString(const AUrl: string; const AAccept: string = ''): string;
 var
-  http: THTTPClient;
-  ResponseStream: TFileStream;
-  Request: IHTTPRequest;
-  Response: IHTTPResponse;
-  HeadersString: string;
-  PureUrl: string;
-  UrlParts: TArray<string>;
-  HeaderString: string;
-  p: Integer;
-  HeaderName: string;
-  HeaderValue: string;
+  TempResult: string;
 begin
-  UrlParts:= SplitString(AUrl, '[');
-
-  if (Length(UrlParts) = 1) then
+  ExecuteHttp(AUrl,
+    procedure(APureUrl: string; AHeaders: TArray<TPair<string, string>>)
     begin
-      PureUrl:= AUrl;
-      HeadersString:= '';
+      try
+        var ResponseStream:= TStringStream.Create;
+        try
+          var http:= TRESTHTTP.Create;
+          try
+            if (AAccept <> '') then
+              http.Request.Accept:= AAccept;
+
+            http.Request.AcceptCharSet:= 'UTF-8';
+            http.Request.UserAgent:= SWebRequestUserAgentName;
+
+            for var Header in AHeaders do
+              http.Request.CustomHeaders.Values[Header.Key]:= Header.Value;
+
+            http.Get(APureUrl, ResponseStream);
+
+            TempResult:= ResponseStream.DataString;
+          finally
+            FreeAndNil(http);
+          end;
+        finally
+          ResponseStream.Free;
+        end;
+      except
+        on E: EHTTPProtocolException do
+          raise Exception.Create(E.Message + SLineBreak + E.ErrorMessage);
+      end
     end
-  else
+  );
+
+  Result:= TempResult;
+end;
+
+procedure HttpDownload(const AUrl, AFileName: string);
+begin
+  ExecuteHttp(AUrl,
+    procedure(APureUrl: string; AHeaders: TArray<TPair<string, string>>)
     begin
-      PureUrl:= UrlParts[0];
-      HeadersString:= UrlParts[1].Trim([']']);
-    end;
+      var ResponseStream:= TFileStream.Create(AFileName, fmCreate);
+      try
+        var http:= THTTPClient.Create;
+        try
+          var Request:= http.GetRequest('GET', APureUrl);
 
-  ResponseStream:= TFileStream.Create(AFileName, fmCreate);
-  try
-    http:= THTTPClient.Create;
-    try
-      Request:= http.GetRequest('GET', PureUrl);
+          for var Header in AHeaders do
+            Request.AddHeader(Header.Key, Header.Value);
 
-      if (HeadersString <> '') then
-         for HeaderString in SplitString(HeadersString, ';') do
-           begin
-             p:= Pos('=', HeaderString);
-             if (p <= 1) then
-               raise Exception.Create('Invalid header format: ' + HeaderString);
+          var Response:= http.Execute(Request, ResponseStream);
 
-             HeaderName:= LeftStr(HeaderString, p-1);
-             HeaderValue:= MidStr(HeaderString, p+1, Length(HeaderString)).Trim(['"']);
-
-             Request.AddHeader(HeaderName, HeaderValue);
-           end;
-
-      Response:= http.Execute(Request, ResponseStream);
-
-      if (Response.StatusCode <> 200) then
-        raise Exception.Create(Format('Error downloading file: %d %s', [Response.StatusCode, Response.StatusText]) + SLineBreak + Response.ContentAsString());
-    finally
-      FreeAndNil(http);
-    end;
-  finally
-    ResponseStream.Free;
-  end;
-
-  Result:= AFileName;
+          if (Response.StatusCode <> 200) then
+            raise Exception.Create(Format('Error downloading file: %d %s', [Response.StatusCode, Response.StatusText]) + SLineBreak + Response.ContentAsString());
+        finally
+          FreeAndNil(http);
+        end;
+      finally
+        ResponseStream.Free;
+      end;
+    end
+  );
 end;
 
 function IsURL(const AValue: string): Boolean;
