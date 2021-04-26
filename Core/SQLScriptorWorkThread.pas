@@ -176,7 +176,7 @@ begin
       FProgressLogger.LogProgress('Log folder: ' + FLogFolderName);
       FProgressLogger.LogProgress('SQL script location: ' + GetHeaderlessURL(FScriptFileName));
 
-      if IsUrl(FScriptFileName) then
+      if IsUrl(FScriptFileName) or IsS3Uri(FScriptFileName) then
         begin
           FProgressLogger.LogProgress('');
           FProgressLogger.LogProgress('Downloading script ...');
@@ -188,7 +188,13 @@ begin
           DownloadedScriptFileName:= 'SQLScriptorScript-' + FormatDateTime('yyyymmdd-hhnnss', FLogDateTime) + '.' + ext;
           DownloadedScriptFileName:= TPath.Combine(TPath.GetTempPath, DownloadedScriptFileName);
 
-          FScriptFileName:= HttpDownload(FScriptFileName, DownloadedScriptFileName);
+          if IsUrl(FScriptFileName) then
+            HttpDownload(FScriptFileName, DownloadedScriptFileName);
+
+          if IsS3Uri(FScriptFileName) then
+            S3Download(FScriptFileName, DownloadedScriptFileName);
+
+          FScriptFileName:= DownloadedScriptFileName;
         end;
 
       ScriptVersion:= GetScriptVersion(FScriptFileName);

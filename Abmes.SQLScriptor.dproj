@@ -1,7 +1,7 @@
 ﻿<Project xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
     <PropertyGroup>
         <ProjectGuid>{D7FA92B7-62C4-4D04-AAF9-99655D293CB5}</ProjectGuid>
-        <ProjectVersion>18.6</ProjectVersion>
+        <ProjectVersion>19.2</ProjectVersion>
         <FrameworkType>None</FrameworkType>
         <MainSource>Abmes.SQLScriptor.dpr</MainSource>
         <Base>True</Base>
@@ -191,6 +191,7 @@
         <DCCReference Include="Oracle\OracleWarningErrorMessagesProvider.pas"/>
         <DCCReference Include="Core\ProgressMultiLogger.pas"/>
         <DCCReference Include="FileProgressLogger.pas"/>
+        <DCCReference Include="Utils\uAwsUtils.pas"/>
         <BuildConfiguration Include="Release">
             <Key>Cfg_2</Key>
             <CfgParent>Base</CfgParent>

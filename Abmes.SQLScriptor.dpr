@@ -39,7 +39,8 @@ uses
   WarningErrorMessagesProvider in 'Core\WarningErrorMessagesProvider.pas',
   OracleWarningErrorMessagesProvider in 'Oracle\OracleWarningErrorMessagesProvider.pas',
   ProgressMultiLogger in 'Core\ProgressMultiLogger.pas',
-  FileProgressLogger in 'FileProgressLogger.pas';
+  FileProgressLogger in 'FileProgressLogger.pas',
+  uAwsUtils in 'Utils\uAwsUtils.pas';
 
 var
   ScriptFileName: string;
@@ -74,7 +75,7 @@ begin
         Writeln('Switches:');
         Writeln('  /script [ScriptFileName|EnvVarForScriptFileName]');
         Writeln('  /logdir [LogsDirName]');
-        Writeln('  /config [FileOrHttpConfigLocation|EnvVarForFileOrHttpConfigLocation]');
+        Writeln('  /config [FileOrHttpOrS3ConfigLocation|EnvVarForFileOrHttpOrS3ConfigLocation]');
         Writeln('  /databases [CommaSeparatedFilterDBNames] (optional)');
         Writeln('  /versionsonly (optional)');
         Writeln('');

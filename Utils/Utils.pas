@@ -29,6 +29,11 @@ function ReadFileToBytes(const AFileName: string): TBytes;
 function HttpGetString(const AUrl: string; const AAccept: string = ''): string;
 procedure HttpDownload(const AUrl, AFileName: string);
 
+function S3GetString(const AS3Uri: string): string;
+procedure S3Download(const AS3Uri, AFileName: string);
+
+function IsS3Uri(const AValue: string): Boolean;
+
 function IsURL(const AValue: string): Boolean;
 function GetURLFileExtension(const AValue: string): string;
 function GetHeaderlessURL(const AValue: string): string;
@@ -58,7 +63,7 @@ uses
   Winapi.Windows,
 {$ENDIF}
   System.Net.URLClient, System.Net.HttpClient, System.IOUtils,
-  System.Generics.Collections;
+  System.Generics.Collections, uAwsUtils;
 
 const
   SWebRequestUserAgentName = 'Abmes';
@@ -332,6 +337,11 @@ begin
   );
 end;
 
+function IsS3Uri(const AValue: string): Boolean;
+begin
+  Result:= StartsText('s3://', AValue);
+end;
+
 function IsURL(const AValue: string): Boolean;
 begin
   Result:= StartsText('http://', AValue) or StartsText('https://', AValue);
@@ -432,6 +442,21 @@ begin
           [ TPath.GetFileNameWithoutExtension(AScriptFileName),
             ADBName,
             FormatDateTime('yyyy-mm-dd_hh-nn-ss', ADateTime)]));
+end;
+
+function S3GetString(const AS3Uri: string): string;
+begin
+  Result:= TEncoding.UTF8.GetString(GetS3Object(AS3Uri, GetAwsCredentials));
+end;
+
+procedure S3Download(const AS3Uri, AFileName: string);
+begin
+  var Stream:= TFileStream.Create(AFileName, fmCreate);
+  try
+    GetS3Object(AS3Uri, GetAwsCredentials, Stream);
+  finally
+    Stream.Free;
+  end;
 end;
 
 end.
