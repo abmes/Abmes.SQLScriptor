@@ -50,10 +50,10 @@ begin
 
   LProgressLogger:= TProgressMultiLogger.Create([TConsoleProgressLogger.Create, TFileProgressLogger.Create(ProgressLogFileName)]);
 
-  LProgressLogger.LogProgress(SAppSignature);
+  LProgressLogger.LogProgress(GetAppSignature);
   LProgressLogger.LogProgress('');
   LProgressLogger.LogProgress('Config location: ' + GetHeaderlessURL(AConfigLocation));
-  LProgressLogger.LogProgress('Databases filter: ' + AFilterDBNames);
+  LProgressLogger.LogProgress('Databases: ' + IfThen(AFilterDBNames = '', '< all >', AFilterDBNames));
 
   LConnectionsConfig:= TConnectionsConfigLoader.Load(AConfigLocation);
   try

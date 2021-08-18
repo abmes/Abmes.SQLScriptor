@@ -49,6 +49,8 @@ function GetExeVersion: string;
 
 function GetLogFileName(const AScriptFileName, ADBName, ALogFolderName: string; const ADateTime: TDateTime): string;
 
+function GetAppSignature: string;
+
 type
   TConstFunc<T,TResult> = reference to function (const Arg1: T): TResult;
 
@@ -457,6 +459,17 @@ begin
   finally
     Stream.Free;
   end;
+end;
+
+function GetAppSignature: string;
+begin
+{$IF defined(MSWINDOWS)}
+  var Version:= GetExeVersion;
+{$ELSE}
+  var Version:= 'for Linux');
+{$ENDIF}
+
+  Result:= SAppSignature + ' ' + Version;
 end;
 
 end.

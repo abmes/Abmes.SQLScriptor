@@ -66,11 +66,7 @@ begin
       TSQLScriptorLauncher.Run(ScriptFileName, LogFolderName, ConfigLocation, FilterDBNames, ExecuteScript)
     else
       begin
-{$IF defined(MSWINDOWS)}
-        Writeln(SAppSignature + ' ' + GetExeVersion);
-{$ELSE}
-        Writeln(SAppSignature + 'for Linux');
-{$ENDIF}
+        Writeln(GetAppSignature);
         Writeln('');
         Writeln('Switches:');
         Writeln('  /script [ScriptFileName|EnvVarForScriptFileName]');

@@ -105,7 +105,7 @@ begin
   ClearLogMessageCounts;
   DoLog(
     ConcatLines(
-      SAppSignature,
+      GetAppSignature,
       Format('Log Begin: %s', [DateTimeToStr(Now)])));
 end;
 
