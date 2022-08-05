@@ -5,7 +5,7 @@ interface
 uses
   DB,
   SqlExpr,
-{$IF defined(MSWINDOWS)}
+{$IF defined(MSWINDOWS_OTL)}
   OtlThreadPool,
 {$ENDIF}
   Utils,
@@ -81,7 +81,7 @@ type
   ISqlStatementExecutorFactory = interface
   ['{E6979B40-5CEF-428C-8E8F-A805C88092F5}']
     function DoCreateExecutor: ISqlStatementExecutor;
-{$IF defined(MSWINDOWS)}
+{$IF defined(MSWINDOWS_OTL)}
     function GetThreadDataFactoryMethod: TOTPThreadDataFactoryMethod;
     property ThreadDataFactoryMethod: TOTPThreadDataFactoryMethod read GetThreadDataFactoryMethod;
 {$ENDIF}
@@ -112,7 +112,7 @@ type
   protected
     function DoCreateExecutor: ISqlStatementExecutor; virtual; abstract;
     function CreateExecutor: IInterface;
-{$IF defined(MSWINDOWS)}
+{$IF defined(MSWINDOWS_OTL)}
     function GetThreadDataFactoryMethod: TOTPThreadDataFactoryMethod;
 {$ENDIF}
 
@@ -248,7 +248,7 @@ begin
   Result:= AtomicIncrement(FMaxConnectionNo);
 end;
 
-{$IF defined(MSWINDOWS)}
+{$IF defined(MSWINDOWS_OTL)}
 function TBaseSqlStatementExecutorFactory.GetThreadDataFactoryMethod: TOTPThreadDataFactoryMethod;
 begin
   Result:= CreateExecutor;

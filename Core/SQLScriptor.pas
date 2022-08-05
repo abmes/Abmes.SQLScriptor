@@ -3,10 +3,12 @@
 interface
 
 uses
-{$IF defined(MSWINDOWS)}
+{$IF defined(MSWINDOWS_OTL)}
   OtlTask,
   OtlTaskControl,
   OtlThreadPool,
+{$ENDIF}
+{$IF defined(MSWINDOWS)}
   Winapi.Windows,
 {$ENDIF}
   Utils,
@@ -39,7 +41,7 @@ type
     FGlobalVariables: IVariables;
     FExecutorFactory: ISqlStatementExecutorFactory;
     FLogger: ILogger;
-{$IF defined(MSWINDOWS)}
+{$IF defined(MSWINDOWS_OTL)}
     FParseThreadPool: IOmniThreadPool;
     FExecThreadPool: IOmniThreadPool;
     function GetMaxParallelExecs: Integer;
@@ -56,7 +58,7 @@ type
     property ThreadSqlStatementExecutor: ISqlStatementExecutor read GetThreadSqlStatementExecutor;
   protected
     procedure ExecScript(const AFileName: string);
-{$IF defined(MSWINDOWS)}
+{$IF defined(MSWINDOWS_OTL)}
     property MaxParallelExecs: Integer read GetMaxParallelExecs write SetMaxParallelExecs;
 {$ENDIF}
   public
@@ -74,7 +76,7 @@ uses
   Variants,
   IOUtils,
   Parser,
-{$IF defined(MSWINDOWS)}
+{$IF defined(MSWINDOWS_OTL)}
   ParallelUtils,
 {$ENDIF}
   Generics.Collections,
@@ -100,7 +102,7 @@ begin
   FExecutorFactory:= AExecutorFactory;
   FLogger:= ALogger;
 
-{$IF defined(MSWINDOWS)}
+{$IF defined(MSWINDOWS_OTL)}
   FParseThreadPool:= OtlThreadPool.CreateThreadPool('SQL Scriptor Parse Thread Pool');
   FParseThreadPool.IdleWorkerThreadTimeout_sec:= 60;
   FParseThreadPool.MaxExecuting:= 50;
@@ -126,7 +128,7 @@ procedure TSqlScriptor.DoExecScript(
   const AFilePositionHistory: IImmutableStack<IFilePosition>);
 
 var
-{$IF defined(MSWINDOWS)}
+{$IF defined(MSWINDOWS_OTL)}
   TaskGroup: IOmniTaskGroup;
   IsParallel: Boolean;
 {$ENDIF}
@@ -153,12 +155,12 @@ var
   end;
 
   procedure ProcessSqlStatement(const ASqlStatement: string; const AFilePositionHistory: IImmutableStack<IFilePosition>);
-{$IF defined(MSWINDOWS)}
+{$IF defined(MSWINDOWS_OTL)}
   var
     Task: IOmniTaskControl;
 {$ENDIF}
   begin
-{$IF defined(MSWINDOWS)}
+{$IF defined(MSWINDOWS_OTL)}
     if IsParallel then
       begin
         Task:=
@@ -217,7 +219,7 @@ var
     TArray.Sort<string>(FileNames);
 
     for NewFileName in FileNames do
-{$IF defined(MSWINDOWS)}
+{$IF defined(MSWINDOWS_OTL)}
       if IsParallel then
         CreateTask(
           procedure (const task: IOmniTask)
@@ -296,7 +298,7 @@ var
           QueryParamsEnabled:=
             MatchText(LineCommandParams[0], STrueTexts);
 
-{$IF defined(MSWINDOWS)}
+{$IF defined(MSWINDOWS_OTL)}
       ltParallel:
         if (Length(LineCommandParams) > 0) then
           begin
@@ -372,7 +374,7 @@ var
   CurrentLineNo: Integer;
   CurrentLineText: string;
 begin
-{$IF defined(MSWINDOWS)}
+{$IF defined(MSWINDOWS_OTL)}
   IsParallel:= False;
 {$ENDIF}
   QueryParamsEnabled:= False;
@@ -385,7 +387,7 @@ begin
     VariablesSet:= TVariablesSet.Create(FGlobalVariables);
     VariablesSet.SetValuesFromScriptParams(AParamValues);
 
-{$IF defined(MSWINDOWS)}
+{$IF defined(MSWINDOWS_OTL)}
     TaskGroup:= CreateTaskGroup;
 {$ENDIF}
     try
@@ -404,7 +406,7 @@ begin
         FreeAndNil(sl);
       end;
     finally
-{$IF defined(MSWINDOWS)}
+{$IF defined(MSWINDOWS_OTL)}
       WaitForAllTasks(TaskGroup);
 {$ENDIF}
     end;
@@ -434,7 +436,7 @@ begin
   Result:= FThreadSqlStatementExecutor;
 end;
 
-{$IF defined(MSWINDOWS)}
+{$IF defined(MSWINDOWS_OTL)}
 function TSqlScriptor.GetMaxParallelExecs: Integer;
 begin
   Result:= FExecThreadPool.MaxExecuting;

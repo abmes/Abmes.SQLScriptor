@@ -22,7 +22,7 @@ uses
   {$IF defined(MSWINDOWS)}
   SQLMonitorUtils in 'Core\SQLMonitorUtils.pas',
   {$ENDIF }
-  {$IF defined(MSWINDOWS)}
+  {$IF defined(MSWINDOWS_OTL)}
   ParallelUtils in 'Utils\ParallelUtils.pas',
   {$ENDIF }
   SQLConnectionInitializer in 'Core\SQLConnectionInitializer.pas',
