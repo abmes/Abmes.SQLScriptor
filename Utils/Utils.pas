@@ -22,7 +22,7 @@ function IndentLines(const AValue: string; const AIndentStr: string): string; ov
 function IfThen(AValue: Boolean; const AIfTrueValue, AIfFalseValue: string): string;
 
 function StringToVar(const Value: string): Variant;
-function SplitString(const AValue: string; const ADelimiterChar: Char = ' '; const AQuoteChar: Char = '"'): TArray<string>;
+function SplitString(const AValue: string; const ADelimiterChar: Char = ' '; const AQuoteChar: Char = '"'; AStrictDelimiter: Boolean = True): TArray<string>;
 
 function ReadFileToBytes(const AFileName: string): TBytes;
 
@@ -185,7 +185,7 @@ begin
   end;  { try }
 end;
 
-function SplitString(const AValue: string; const ADelimiterChar: Char = ' '; const AQuoteChar: Char = '"'): TArray<string>;
+function SplitString(const AValue: string; const ADelimiterChar: Char = ' '; const AQuoteChar: Char = '"'; AStrictDelimiter: Boolean = True): TArray<string>;
 
   function CountChars(const AString: string; const AChar: Char): Integer;
   var
@@ -218,8 +218,7 @@ begin
   try
     SL.Delimiter:= ADelimiterChar;
     SL.QuoteChar:= AQuoteChar;
-    SL.StrictDelimiter:= True;
-
+    SL.StrictDelimiter:= AStrictDelimiter;
     SL.DelimitedText:= NormalizeQuotes(AValue);
 
     SetLength(Result, SL.Count);
@@ -250,7 +249,7 @@ begin
       HeadersString:= UrlParts[1].Trim([']']);
     end;
 
-  var Headers:= TList<TPair<string, string>>.Create(nil);
+  var Headers:= TList<TPair<string, string>>.Create();
   try
     if (HeadersString <> '') then
        for var HeaderString in SplitString(HeadersString, ';') do

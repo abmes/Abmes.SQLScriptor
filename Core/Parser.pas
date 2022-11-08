@@ -94,7 +94,10 @@ begin
         ACommandParams:=
           Utils.SplitString(
             TrimEquals(
-              Copy(ALineText, Length(SCommandRow + LineTypeTexts[lt])+1, Length(ALineText))));
+              Copy(ALineText, Length(SCommandRow + LineTypeTexts[lt])+1, Length(ALineText))),
+            ' ',
+            '"',
+            False);
 
         Break;
       end;
