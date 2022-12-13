@@ -465,7 +465,7 @@ begin
 {$IF defined(MSWINDOWS)}
   var Version:= GetExeVersion;
 {$ELSE}
-  var Version:= 'for Linux');
+  var Version:= 'for Linux';
 {$ENDIF}
 
   Result:= SAppSignature + ' ' + Version;
